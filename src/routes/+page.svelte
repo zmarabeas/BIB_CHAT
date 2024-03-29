@@ -252,6 +252,16 @@
         }
     }
 
+    function submit(event) {
+        if (event.key === 'Enter') {
+            if(inputMessage.trim() !== ''){
+                handleSend();
+            }
+        }else{
+            console.log('Key pressed: ', event.key);
+        }
+    }
+
 
 </script>
 
@@ -301,7 +311,7 @@
 
             <!-- <button on:click={()=>writeDummyData()}>spam</button> -->
             <div class=input-wrapper>
-                <input type="text" class=userInput bind:value={inputMessage}>
+                <input type="text" on:keydown={submit} class=userInput bind:value={inputMessage}>
                 <button class=btn on:click={()=>handleSend()}>→</button>
             </div>
 
