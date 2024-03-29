@@ -1,10 +1,10 @@
 <script>
     import { FirebaseDB as db } from '$lib/firebase/firebase.js';
-    import { getDatabase, ref, set, update, child, onValue } from "firebase/database";
+    import { getDatabase, ref, set, update, child, onValue, onChildAdded } from "firebase/database";
     import { onMount } from 'svelte';
 
-    console.log(db);
 
+    let userName = null;
     function writeUserData(phone, message, type='sent') {
         const timestamp = Date.now();
 
@@ -14,7 +14,7 @@
             return;
         }
 
-        update(ref(db, 'users/' + phone + '/messages'), {
+        update(ref(db, 'messages/' + phone + '/messages'), {
             [timestamp]: {
                 message: message,
                 type: type,
@@ -25,21 +25,41 @@
             console.error('Error writing data: ', error);
             console.log('Data not written successfully!', error);
         });
+
+
+        let userID = phone;
+        update(ref(db, 'users/'), {
+            [phone]: {
+                lastMessage: message,
+                timestamp: timestamp,
+                name: userName || 'Default',
+            }
+        }).then(() => {
+            // console.log('Data written successfully!');
+        }).catch((error) => {
+            console.error('Error writing data: ', error);
+            console.log('Data not written successfully!', error);
+        });
+
     }
 
     function getUserData(phone) {
-        const db = getDatabase();
-
-        return data;
+        const userRef = ref(db, 'messages/' + phone);
+        onValue(userRef, (snapshot) => {
+            data = snapshot.val();
+            data = data;
+        });
+        console.log(data);
     }
 
     let data = {};
+    let usersData = {};
     function getAllUserData() {
         const userRef = ref(db, 'users/');
         onValue(userRef, (snapshot) => {
-            data = snapshot.val();
+            usersData = snapshot.val();
         }, {
-            onlyOnce:true
+            // onlyOnce:true
         });
 
         // const dbRef = ref(getDatabase());
@@ -68,7 +88,19 @@
             message: 'oranges',
         },
         {
-            phone: '1234567890',
+            phone: '1234567290',
+            message: 'Hello World!',
+        },
+        {
+            phone: '1234563890',
+            message: 'Hello World!',
+        },
+        {
+            phone: '1232567890',
+            message: 'Hello World!',
+        },
+        {
+            phone: '1224567890',
             message: 'Hello World!',
         },
         {
@@ -84,7 +116,7 @@
             message: 'Hello World!',
         },
         {
-            phone: '1234567890',
+            phone: '1234564890',
             message: 'Hello World!',
         },
         {
@@ -96,19 +128,7 @@
             message: 'Hello World!',
         },
         {
-            phone: '1234567890',
-            message: 'Hello World!',
-        },
-        {
-            phone: '1234567890',
-            message: 'Hello World!',
-        },
-        {
-            phone: '1234567890',
-            message: 'Hello World!',
-        },
-        {
-            phone: '1234567890',
+            phone: '1234565890',
             message: 'Hello World!',
         },
         {
@@ -145,7 +165,6 @@
         // dat = getAllUserData();
         // console.log(dat);
         getAllUserData();
-        console.log(data);
 
     }); 
 
@@ -153,12 +172,10 @@
 
     let users = new Set();
     $: {
-        console.log(data);
-        Object.keys(data).forEach(phone => {
+        Object.keys(usersData).forEach(phone => {
             users.add(phone);
             users = users;
         });
-        console.log(users);
     }
 
     let currentMessages = [];
@@ -166,32 +183,74 @@
     let selectedUser = '';
     function handleUser(user){
         selectedUser = user;
-        currentMessages = data[user].messages;
+        getUserData(user);
+        userName = usersData[user].name;
+        currentMessages = data.messages;
+        // currentMessages = data[user].messages;
     }
 
     let inputMessage = '';
 
     function handleSend(){
-        // writeUserData(selectedUser, inputMessage);
+        writeUserData(selectedUser, inputMessage);
+        handleUser(selectedUser);
+        // getUserData(selectedUser);
         inputMessage = '';
     }
+
+    let editUserName = false;
+
+    let changeUserName = () => {
+        editUserName = false;
+        update(ref(db, 'users/' + selectedUser), {
+            name: userName,
+        }).then(() => {
+            // console.log('Data written successfully!');
+        }).catch((error) => {
+            console.error('Error writing data: ', error);
+            console.log('Data not written successfully!', error);
+        });
+    }
+
+    let cancelEdit = () => {
+        editUserName = false;
+        userName = usersData[selectedUser].name;
+    }
+
 
 </script>
 
 
 <div class=content>
     <div class=container id=users>
-        <h3>users</h3>
+        <div class=title-bar>
+            <h3>users</h3>
+            <button class=edit>create mass text</button>
+        </div>
         {#if users.size === 0}
             <p>No users</p>
         {:else}
             {#each Array.from(users) as user}
-                <button id={selectedUser===user?'selected':''} on:click={()=>handleUser(user)}>{user}</button>
+                <button id={selectedUser===user?'selected':''} on:click={()=>handleUser(user)}>
+                    {(usersData[user].name==='Default'?user:usersData[user].name) + ' - ' + usersData[user].lastMessage}
+                </button>
             {/each}
         {/if}
     </div>
     <div class=container id=chat>
-        <h3>messages{selectedUser !== '' ? ' - ' + selectedUser: ''}</h3>
+        <h3>messages{selectedUser !==  '' ? ' - ' + selectedUser: ''}
+            {#if editUserName === true}
+                <input type="text" id=username bind:value={userName}>
+                <button class=edit on:click={()=>changeUserName()}>submit</button>
+                <button class=edit on:click={()=>cancelEdit()}>cancel</button>
+            {:else}
+                {#if selectedUser !== ''}
+                    {' - ' + userName}
+                    <button class=edit on:click={()=>editUserName = true}>edit</button>
+                {/if}
+            {/if}
+        </h3>
+
         <div class=message-content>
             {#if currentMessages}
                 {#each Object.keys(currentMessages).reverse() as message}
@@ -215,6 +274,14 @@
 
 
 <style>
+    .title-bar {
+        display: flex;
+        flex-direction: row;
+        justify-content: space-between;
+        align-items: center;
+        gap: 1rem;
+    }
+
     .content {
         padding: .5rem;
         min-width: 100%;
@@ -227,6 +294,10 @@
         overflow: scroll;
     }
 
+    input:placeholder-shown {
+        display: hidden;
+    }
+
     .btn {
         width: 20px;
         max-width: 40px;
@@ -236,6 +307,11 @@
         text-align: center;
         padding: 5px;
         line-height: 0px;
+    }
+
+    #username {
+        width: 30%;
+        max-width: 30%;
     }
 
     .input-wrapper {
@@ -253,6 +329,10 @@
         text-transform: capitalize;
     }
 
+    button:first-letter {
+        text-transform: capitalize;
+    }
+
     button {
         padding: 10px 20px;
         font-size: 16px;
@@ -262,14 +342,16 @@
         background: none;
         min-width: 100%;
         /* background: linear-gradient(#5fcbfb,#07a3ee); */
-        box-shadow: 0px 3px 3px rgba(0, 0, 0, 0.3);
+        /* box-shadow: 0px 3px 3px rgba(0, 0, 0, 0.3); */
+        overflow-x: hidden;
+        box-shadow: none;
         color: azure;
         border: none;
         transition: transform 0.3s ease, box-shadow 0.3s ease;
     }
     
     button:hover {
-        box-shadow: 0px 5px 5px rgba(0, 0, 0, 0.3);
+        /* box-shadow: 0px 5px 5px rgba(0, 0, 0, 0.3); */
         background-color: rgba(0, 0, 0, 0.2);
     }
 
@@ -304,8 +386,8 @@
         gap: 1rem;
         padding: 1rem;
         overflow: scroll;
-        min-height: 85%;
-        max-height: 85%;
+        min-height: 80%;
+        max-height: 80%;
         /* max-height: 60vh;
         min-height: 60vh; */
     }
@@ -350,6 +432,25 @@
         align-items: center;
         border-radius: 1rem;
         border: 1px solid #C3CEDA;
+    }
+
+    .edit {
+        min-width: 50px;
+        text-align: center;
+    }
+
+    @media only screen and (max-width: 778px) {
+        .content {
+            flex-direction: column;
+        }
+
+        #users.container {
+            min-width: 100%;
+        }
+
+        #chat.container {
+            min-width: 100%;
+        }
     }
 
 
