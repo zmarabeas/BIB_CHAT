@@ -1,4 +1,5 @@
-const apiKey = process.env.FIREBASE_API_KEY;
+// const apiKey = process.env.FIREBASE_API_KEY;
+const apiKey = "AIzaSyC7ij7x2up4mqxJvnArSI-adaDxPhUzt0k";
 const firebaseConfig = {
     apiKey: apiKey,
     authDomain: "gns-fub-chat-45501.firebaseapp.com",
@@ -10,4 +11,4 @@ const firebaseConfig = {
     measurementId: "G-19HXS5CKH2"
 };
   
-  export { firebaseConfig }
+export { firebaseConfig }
