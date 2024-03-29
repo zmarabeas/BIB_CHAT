@@ -172,7 +172,8 @@
     let inputMessage = '';
 
     function handleSend(){
-        writeUserData(selectedUser, inputMessage);
+        // writeUserData(selectedUser, inputMessage);
+        inputMessage = '';
     }
 
 </script>
