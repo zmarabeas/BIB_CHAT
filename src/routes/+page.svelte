@@ -48,6 +48,7 @@
         onValue(userRef, (snapshot) => {
             data = snapshot.val();
             data = data;
+            currentMessages = data.messages;
         });
         await tick();
     }
@@ -183,6 +184,15 @@
         // console.log('user', selectedUser);
         // console.log('current', currentMessages);
         // console.log('server', data);
+        if(selectedUser !== ''){
+            const userRef = ref(db, 'messages/' + selectedUser);
+            onValue(userRef, (snapshot) => {
+                data = snapshot.val();
+                data = data;
+            });
+
+        }
+
     }
 
     let currentMessages = [];
