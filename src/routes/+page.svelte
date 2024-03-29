@@ -1,11 +1,11 @@
 <script>
     import { FirebaseDB as db } from '$lib/firebase/firebase.js';
-    import { getDatabase, ref, set, update, child, onValue, onChildAdded } from "firebase/database";
+    import { getDatabase, orderByChild,  ref, set, update, child, onValue, onChildAdded } from "firebase/database";
     import { onMount, tick } from 'svelte';
 
 
     let userName = null;
-    function writeUserData(phone, message, type='sent') {
+    function writeUserData(phone, message, type='sent', name='Default') {
         const timestamp = Date.now();
 
         if(type !== 'sent' && type !== 'received') {
@@ -32,7 +32,7 @@
             [phone]: {
                 lastMessage: message,
                 timestamp: timestamp,
-                name: userName || 'Default',
+                name: name,
             }
         }).then(() => {
             // console.log('Data written successfully!');
@@ -53,6 +53,15 @@
         await tick();
     }
 
+    //keep all users sorted by last message timestamp
+    $: {
+        //sort users by last message timestamp
+        users = new Set([...users].sort((a, b) => {
+            return usersData[b].timestamp - usersData[a].timestamp;
+        }));
+
+    }
+
     let messageState = null;
     let data = {};
     let usersData = {};
@@ -61,7 +70,6 @@
         onValue(userRef, (snapshot) => {
             usersData = snapshot.val();
         }, {
-            // onlyOnce:true
         });
 
         // const dbRef = ref(getDatabase());
@@ -215,7 +223,7 @@
     let inputMessage = '';
 
     function handleSend(){
-        writeUserData(selectedUser, inputMessage);
+        writeUserData(selectedUser, inputMessage, 'sent', userName);
         handleUser(selectedUser);
         // getUserData(selectedUser);
         inputMessage = '';
@@ -262,6 +270,135 @@
         }
     }
 
+    let files;
+
+	$: if (files) {
+		// Note that `files` is of type `FileList`, not an Array:
+		// https://developer.mozilla.org/en-US/docs/Web/API/FileList
+		console.log(files);
+
+		for (const file of files) {
+			console.log(`${file.name}: ${file.size} bytes`);
+		}
+	}
+
+    import papa from 'papaparse';
+
+    let massData = [];
+    async function handleChange(event) {
+        let files = event.target.files;
+        let dat = await readCSV(files[0]);
+        sortData(dat);
+        console.log(massData);
+
+        // for (let f of files) {
+        //     papa.parse(f, {
+        //         header: true,
+        //         complete: function (results) {
+        //             console.log(results);
+        //         }
+        //     });
+        // }
+    }
+
+    /*
+    {
+        name: 'name',
+        phone: 'phone',
+        note: 'note'
+    }
+     */
+
+    function formatPhone(phone) {
+        let phoneString = phone.toString();
+        // reformat from (123) 456-7890 to +11234567890
+        phoneString = phoneString.replace(/\D/g, '');
+        if(phoneString.length === 10){
+            phoneString = '+1' + phoneString;
+        }else if(phoneString.length === 11){
+            phoneString = '+' + phoneString;
+        }
+        return phoneString;
+    }
+
+    function formatName(name) {
+        // reformat name from all caps to first letter caps
+        let nameString = name.toString();
+        nameString = nameString.toLowerCase();
+        //capitalize the first letter of each word
+        nameString = nameString.replace(/\b\w/g, l => l.toUpperCase());
+        return nameString;
+    }
+
+    function sortData(data) {
+        massData = [];
+        let phoneKey = 'PHONE NUMBER';
+        let noteKey = 'NOTE'
+        let nameKey = 'NAME';
+        let emailKey = 'EMAIL';
+        data.forEach(function(row){
+            let name = formatName(row[nameKey]);
+            let phone = formatPhone(row[phoneKey]);
+            let note = row[noteKey];
+            let email = row[emailKey];
+
+            if(phone && name){
+                massData.push({
+                    name: name,
+                    phone: phone,
+                    note: note,
+                    email: email || '',
+                });
+                massData = massData;
+            }
+        });
+    }
+
+    async function handleData(data) {
+    }
+
+    const readCSV = async (file) => {
+        return new Promise(resolve => {
+            papa.parse(file, {
+                header: true,
+                complete: results => {
+                    console.log('Complete', results.data.length, 'records.'); 
+                    resolve(results.data);
+                }
+            });
+        });
+    };
+
+    async function parseCSV(file) {
+        papa.parse(file, {
+            header: true,
+            complete: function (results) {
+                handleData(results.data);
+            }
+        });
+    }
+
+    function handleRemove(index){
+        massData.splice(index, 1);
+        massData = massData;
+    }
+
+
+    let massMessage = '';
+    function getMoney(){
+        massData.forEach(function(data){
+            writeUserData(data.phone, massMessage, 'sent', data.name);
+        });
+        massData = [];
+        massData = massData;
+        massMessage = '';
+    }
+
+    function clearAll(){
+        massData = [];
+        massData = massData;
+        massMessage = '';
+    }
 
 </script>
 
@@ -277,7 +414,9 @@
         {:else}
             {#each Array.from(users) as user}
                 <button id={selectedUser===user?'selected':''} on:click={()=>handleUser(user)}>
-                    {(usersData[user].name==='Default'?user:usersData[user].name) + ' - ' + usersData[user].lastMessage}
+                    <span class=buttontext>
+                        {(usersData[user].name==='Default'?user:usersData[user].name) + ' - ' + usersData[user].lastMessage}
+                    </span>
                 </button>
             {/each}
         {/if}
@@ -319,7 +458,17 @@
     {:else if messageState === 'mass'}
         <div class=container id=mass>
             <h3>mass text</h3>
-            <input type="file">
+            <input type="file" id=file-input bind:files on:change={handleChange}>
+            <button id=clear on:click={()=>clearAll()}>clear</button>
+            <div class=names-container>
+                {#each massData as data, index}
+                    <span class=name>{data.name} - {data.phone} - {data.email}
+                        <button id=remove on:click={()=>handleRemove(index)}>remove</button>
+                     </span>
+                {/each}
+            </div>
+            <textarea bind:value={massMessage} rows=5 placeholder="Enter your message and make more money than you could ever imagine" name="message" id="mass-text"></textarea>
+            <button on:click={()=>getMoney()} id=MONEY>GET DAT MONEY BABY</button>
         </div>
     {:else}
         <div class=container id=mass>
@@ -332,6 +481,74 @@
 
 
 <style>
+
+    #clear {
+        text-align: center;
+        position: relative;
+        top: 0;
+        left: 0;
+    }
+
+    .buttontext {
+        width: 100%;
+        overflow: hidden;
+        white-space: nowrap;
+        font-size: 1rem;
+        display: block;
+        text-overflow: ellipsis;
+    }​
+
+    #mass-text {
+        width: 100%;
+        height: 300px;
+        padding: .5rem;
+        border-radius: 1rem;
+        border: 1px solid #C3CEDA;
+    }
+
+    .name {
+        display: flex;
+        flex-direction: row;
+        justify-content: space-between;
+        align-items: center;
+        font-size: .9rem;
+        gap: .5rem;
+    }
+
+    #MONEY {
+        background-color: #07a3ee;
+        color: azure;
+        padding: 10px 20px;
+        border-radius: 5px;
+        border: none;
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
+        text-align: center;
+    }
+
+    #remove {
+        min-width: 50px;
+        text-align: center;
+        max-width: 20%;
+        float: right;
+    }
+
+    .names-container {
+        display: flex;
+        flex-direction: column;
+        overflow-y: scroll;
+        max-height: 50%;
+        min-height: 50%;
+        gap: .5rem;
+    }
+
+    #file-input {
+        display: flex;
+        flex-direction: row;
+        justify-content: center;
+        text-align: center;
+        align-items: center;
+        min-height: 20px;
+    }
     .title-bar {
         display: flex;
         flex-direction: row;
@@ -401,8 +618,10 @@
         min-width: 100%;
         /* background: linear-gradient(#5fcbfb,#07a3ee); */
         /* box-shadow: 0px 3px 3px rgba(0, 0, 0, 0.3); */
-        overflow-x: hidden;
         box-shadow: none;
+        overflow: hidden;
+        min-height: 40px;
+        text-wrap: nowrap;
         color: azure;
         border: none;
         transition: transform 0.3s ease, box-shadow 0.3s ease;
@@ -471,7 +690,8 @@
         min-width: 70%;
         display: flex;
         flex-direction: column;
-        justify-content: space-between;
+        justify-content: flex-start;
+        gap: .5rem;
         align-items: center;
     }
 
