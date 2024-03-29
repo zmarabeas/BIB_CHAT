@@ -1,7 +1,7 @@
 <script>
     import { FirebaseDB as db } from '$lib/firebase/firebase.js';
     import { getDatabase, ref, set, update, child, onValue, onChildAdded } from "firebase/database";
-    import { onMount } from 'svelte';
+    import { onMount, tick } from 'svelte';
 
 
     let userName = null;
@@ -43,15 +43,16 @@
 
     }
 
-    function getUserData(phone) {
+    async function getUserData(phone) {
         const userRef = ref(db, 'messages/' + phone);
         onValue(userRef, (snapshot) => {
             data = snapshot.val();
             data = data;
         });
-        console.log(data);
+        await tick();
     }
 
+    let messageState = null;
     let data = {};
     let usersData = {};
     function getAllUserData() {
@@ -178,14 +179,26 @@
         });
     }
 
+    $: {
+        // console.log('user', selectedUser);
+        // console.log('current', currentMessages);
+        // console.log('server', data);
+    }
+
     let currentMessages = [];
 
     let selectedUser = '';
-    function handleUser(user){
+    async function handleUser(user){
+        if(user === selectedUser) return;
+
+        messageState = 'chat';
         selectedUser = user;
         getUserData(user);
+        await tick();
         userName = usersData[user].name;
         currentMessages = data.messages;
+        userName = userName;
+        currentMessages = currentMessages;
         // currentMessages = data[user].messages;
     }
 
@@ -217,6 +230,18 @@
         userName = usersData[selectedUser].name;
     }
 
+    function handleMass(){
+        if(messageState === 'mass'){
+            messageState = null;
+            return;
+        }else if(messageState === 'chat'){
+            selectedUser = '';
+            messageState = 'mass';
+        }else{
+            messageState = 'mass';
+        }
+    }
+
 
 </script>
 
@@ -225,7 +250,7 @@
     <div class=container id=users>
         <div class=title-bar>
             <h3>users</h3>
-            <button class=edit>create mass text</button>
+            <button class=edit id={messageState==='mass'?'selected':''} on:click={()=>handleMass()}>create mass text</button>
         </div>
         {#if users.size === 0}
             <p>No users</p>
@@ -237,38 +262,51 @@
             {/each}
         {/if}
     </div>
-    <div class=container id=chat>
-        <h3>messages{selectedUser !==  '' ? ' - ' + selectedUser: ''}
-            {#if editUserName === true}
-                <input type="text" id=username bind:value={userName}>
-                <button class=edit on:click={()=>changeUserName()}>submit</button>
-                <button class=edit on:click={()=>cancelEdit()}>cancel</button>
-            {:else}
-                {#if selectedUser !== ''}
-                    {' - ' + userName}
-                    <button class=edit on:click={()=>editUserName = true}>edit</button>
+
+    {#if messageState === 'chat'}
+        <div class=container id=chat>
+            <h3>messages{selectedUser !==  '' ? ' - ' + selectedUser: ''}
+                {#if editUserName === true}
+                    <input type="text" id=username bind:value={userName}>
+                    <button class=edit on:click={()=>changeUserName()}>submit</button>
+                    <button class=edit on:click={()=>cancelEdit()}>cancel</button>
+                {:else}
+                    {#if selectedUser !== ''}
+                        {' - ' + userName}
+                        <button class=edit on:click={()=>editUserName = true}>edit</button>
+                    {/if}
                 {/if}
-            {/if}
-        </h3>
+            </h3>
 
-        <div class=message-content>
-            {#if currentMessages}
-                {#each Object.keys(currentMessages).reverse() as message}
-                    <p class=message id={currentMessages[message].type}>{currentMessages[message].message}</p>
-                {/each}
-            {:else}
-                <p>No messages</p>
-            {/if}
+            <div class=message-content>
+                {#if currentMessages}
+                    {#each Object.keys(currentMessages).reverse() as message}
+                        <p class=message id={currentMessages[message].type}>{currentMessages[message].message}</p>
+                    {/each}
+                {:else}
+                    <p>No messages</p>
+                {/if}
+
+            </div>
+
+            <!-- <button on:click={()=>writeDummyData()}>spam</button> -->
+            <div class=input-wrapper>
+                <input type="text" class=userInput bind:value={inputMessage}>
+                <button class=btn on:click={()=>handleSend()}>→</button>
+            </div>
 
         </div>
-
-        <!-- <button on:click={()=>writeDummyData()}>spam</button> -->
-        <div class=input-wrapper>
-            <input type="text" class=userInput bind:value={inputMessage}>
-            <button class=btn on:click={()=>handleSend()}>→</button>
+    {:else if messageState === 'mass'}
+        <div class=container id=mass>
+            <h3>mass text</h3>
+            <input type="file">
         </div>
+    {:else}
+        <div class=container id=mass>
+            <h3>select a user or create a mass text</h3>
+        </div>
+    {/if}
 
-    </div>
 </div>
 
 
@@ -396,7 +434,7 @@
         min-width: 30%;
         display: flex;
         flex-direction: column;
-        gap: 1rem;
+        gap: .3rem;
         overflow: scroll;
     }
 
@@ -407,6 +445,14 @@
         display: flex;
         flex-direction: column;
         justify-content: space-between;
+    }
+
+    #mass.container {
+        min-width: 70%;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        align-items: center;
     }
 
     .userInput {
