@@ -1,5 +1,6 @@
+const apiKey = process.env.FIREBASE_API_KEY;
 const firebaseConfig = {
-    apiKey: "AIzaSyC7ij7x2up4mqxJvnArSI-adaDxPhUzt0k",
+    apiKey: apiKey,
     authDomain: "gns-fub-chat-45501.firebaseapp.com",
     databaseURL: "https://gns-fub-chat-45501-default-rtdb.firebaseio.com",
     projectId: "gns-fub-chat-45501",
