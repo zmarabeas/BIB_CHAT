@@ -55,10 +55,6 @@
 
     //keep all users sorted by last message timestamp
     $: {
-        //sort users by last message timestamp
-        users = new Set([...users].sort((a, b) => {
-            return usersData[b].timestamp - usersData[a].timestamp;
-        }));
 
     }
 
@@ -83,6 +79,19 @@
         //     console.error(error);
         // });
     }
+
+    let testData = [
+      {
+        phone: '+16044494501',
+        message: 'where did you get that transmog?',
+        name: 'neurion',
+      },
+      {
+        phone: '+18777804236',
+        message: 'where did you get that transmog?',
+        name: 'twilio bot',
+      }
+    ];
 
     let dummyMessageData = [
         {
@@ -169,6 +178,16 @@
     }
     // writeDummyData();   
 
+    function testUserData() {
+        testData.forEach(function(data, index) {
+            setTimeout(function(){
+                writeUserData(data.phone, 'yo where did you get that transmog?', 'sent', data.name);
+            }, 1000 * (index + 1));
+        });
+        console.log('All data written!');
+    }
+    {/* testUserData(); */}
+
 
     let dat;
     onMount(() => {
@@ -186,6 +205,10 @@
             users.add(phone);
             users = users;
         });
+        //sort users by last message timestamp
+        users = new Set([...users].sort((a, b) => {
+            return usersData[b].timestamp - usersData[a].timestamp;
+        }));
     }
 
     $: {
@@ -224,7 +247,28 @@
 
     function handleSend(){
         writeUserData(selectedUser, inputMessage, 'sent', userName);
+        let to = formatPhone(selectedUser);
+        let message = {
+          to: to,
+          body: inputMessage,
+        }
         handleUser(selectedUser);
+
+      //send message to twilio api https://gnschat-9300.twil.io/welcome
+      const response = fetch('https://gnschat-9300.twil.io/welcome', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(message),
+        })
+        .then(response => response.json())
+        .then(data => {
+          console.log('Success:', data);
+        })
+        .catch((error) => {
+          console.error('Error:', error);
+        });
         // getUserData(selectedUser);
         inputMessage = '';
     }
@@ -496,7 +540,7 @@
         font-size: 1rem;
         display: block;
         text-overflow: ellipsis;
-    }​
+    }
 
     #mass-text {
         width: 100%;
@@ -621,6 +665,7 @@
         box-shadow: none;
         overflow: hidden;
         min-height: 40px;
+        max-height: 40px;
         text-wrap: nowrap;
         color: azure;
         border: none;
