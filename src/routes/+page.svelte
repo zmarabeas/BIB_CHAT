@@ -2,7 +2,8 @@
     import { FirebaseDB as db } from '$lib/firebase/firebase.js';
     import { getDatabase, orderByChild,  ref, set, update, child, onValue, onChildAdded } from "firebase/database";
     import { onMount, tick } from 'svelte';
-
+    import papa from 'papaparse';
+    import { testData, dummyMessageData } from './testData.js';
 
     let userName = null;
     function writeUserData(phone, message, type='sent', name='Default') {
@@ -14,6 +15,7 @@
             return;
         }
 
+        //todo: update with one data structure
         update(ref(db, 'messages/' + phone + '/messages'), {
             [timestamp]: {
                 message: message,
@@ -28,10 +30,18 @@
 
 
         let userID = phone;
-        update(ref(db, 'users/'), {
-            [phone]: {
+        update(ref(db, 'users/' + phone + '/data/'), {
                 lastMessage: message,
                 timestamp: timestamp,
+        }).then(() => {
+            // console.log('Data written successfully!');
+        }).catch((error) => {
+            console.error('Error writing data: ', error);
+            console.log('Data not written successfully!', error);
+        });
+
+        update(ref(db, 'users/' + phone), {
+            ['info']: {
                 name: name,
             }
         }).then(() => {
@@ -49,14 +59,11 @@
             data = snapshot.val();
             data = data;
             currentMessages = data.messages;
+            console.log('data', data);
         });
         await tick();
     }
 
-    //keep all users sorted by last message timestamp
-    $: {
-
-    }
 
     let messageState = null;
     let data = {};
@@ -67,106 +74,7 @@
             usersData = snapshot.val();
         }, {
         });
-
-        // const dbRef = ref(getDatabase());
-        // get(child(dbRef, `users/${userId}`)).then((snapshot) => {
-        // if (snapshot.exists()) {
-        //     console.log(snapshot.val());
-        // } else {
-        //     console.log("No data available");
-        // }
-        // }).catch((error) => {
-        //     console.error(error);
-        // });
     }
-
-    let testData = [
-      {
-        phone: '+16044494501',
-        message: 'where did you get that transmog?',
-        name: 'neurion',
-      },
-      {
-        phone: '+18777804236',
-        message: 'where did you get that transmog?',
-        name: 'twilio bot',
-      }
-    ];
-
-    let dummyMessageData = [
-        {
-            phone: '1234567890',
-            message: 'bananas',
-        },
-        {
-            phone: '1234567890',
-            message: 'apples',
-        },
-        {
-            phone: '1234567890',
-            message: 'oranges',
-        },
-        {
-            phone: '1234567290',
-            message: 'Hello World!',
-        },
-        {
-            phone: '1234563890',
-            message: 'Hello World!',
-        },
-        {
-            phone: '1232567890',
-            message: 'Hello World!',
-        },
-        {
-            phone: '1224567890',
-            message: 'Hello World!',
-        },
-        {
-            phone: '1234567890',
-            message: 'Hello World!',
-        },
-        {
-            phone: '1234567890',
-            message: 'Hello World!',
-        },
-        {
-            phone: '1234567890',
-            message: 'Hello World!',
-        },
-        {
-            phone: '1234564890',
-            message: 'Hello World!',
-        },
-        {
-            phone: '1234567890',
-            message: 'Hello World!',
-        },
-        {
-            phone: '1234567890',
-            message: 'Hello World!',
-        },
-        {
-            phone: '1234565890',
-            message: 'Hello World!',
-        },
-        {
-            phone: '1234567890',
-            message: 'Hello World!',
-        },
-        {
-            phone: '1234567890',
-            message: 'Hello World!',
-        },
-        {
-            phone: '1234567890',
-            message: 'Hello World!',
-        },
-        {
-            phone: '0987654321',
-            message: 'Goodbye World!',
-        },
-    ]
 
     function writeDummyData() {
         dummyMessageData.forEach(function(data, index) {
@@ -186,7 +94,7 @@
         });
         console.log('All data written!');
     }
-    {/* testUserData(); */}
+    // testUserData();
 
 
     let dat;
@@ -207,8 +115,9 @@
         });
         //sort users by last message timestamp
         users = new Set([...users].sort((a, b) => {
-            return usersData[b].timestamp - usersData[a].timestamp;
+            return usersData[b].data.timestamp - usersData[a].data.timestamp;
         }));
+        console.log(usersData);
     }
 
     $: {
@@ -236,7 +145,7 @@
         selectedUser = user;
         getUserData(user);
         await tick();
-        userName = usersData[user].name;
+        userName = usersData[user].info.name;
         currentMessages = data.messages;
         userName = userName;
         currentMessages = currentMessages;
@@ -289,7 +198,7 @@
 
     let cancelEdit = () => {
         editUserName = false;
-        userName = usersData[selectedUser].name;
+        userName = usersData[selectedUser].info.name;
     }
 
     function handleMass(){
@@ -316,17 +225,6 @@
 
     let files;
 
-	$: if (files) {
-		// Note that `files` is of type `FileList`, not an Array:
-		// https://developer.mozilla.org/en-US/docs/Web/API/FileList
-		console.log(files);
-
-		for (const file of files) {
-			console.log(`${file.name}: ${file.size} bytes`);
-		}
-	}
-
-    import papa from 'papaparse';
 
     let massData = [];
     async function handleChange(event) {
@@ -334,24 +232,7 @@
         let dat = await readCSV(files[0]);
         sortData(dat);
         console.log(massData);
-
-        // for (let f of files) {
-        //     papa.parse(f, {
-        //         header: true,
-        //         complete: function (results) {
-        //             console.log(results);
-        //         }
-        //     });
-        // }
     }
-
-    /*
-    {
-        name: 'name',
-        phone: 'phone',
-        note: 'note'
-    }
-     */
 
     function formatPhone(phone) {
         let phoneString = phone.toString();
@@ -459,7 +340,7 @@
             {#each Array.from(users) as user}
                 <button id={selectedUser===user?'selected':''} on:click={()=>handleUser(user)}>
                     <span class=buttontext>
-                        {(usersData[user].name==='Default'?user:usersData[user].name) + ' - ' + usersData[user].lastMessage}
+                        {(usersData[user].info.name==='Default'?user:usersData[user].info.name) + ' - ' + usersData[user].data.lastMessage}
                     </span>
                 </button>
             {/each}
