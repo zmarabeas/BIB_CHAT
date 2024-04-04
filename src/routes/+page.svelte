@@ -167,6 +167,7 @@
     }
 
     function handleSend(mass=false){
+        if(inputMessage.trim() === '') return;
         writeUserData(selectedUser, inputMessage, 'sent', userName);
         let to = formatPhone(selectedUser);
         let message = {
@@ -187,6 +188,7 @@
     }
 
     function sendMassText(){
+        if(massMessage.trim() === '') return;
         let formattedPhone;
         let formattedMessage;
         massData.forEach(function(data){
