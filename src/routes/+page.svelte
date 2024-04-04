@@ -94,18 +94,12 @@
         });
         console.log('All data written!');
     }
-    // testUserData();
-
 
     let dat;
     onMount(() => {
-        // dat = getAllUserData();
-        // console.log(dat);
         getAllUserData();
-
     }); 
 
-    // writeDummyData();
 
     let users = new Set();
     $: {
@@ -121,9 +115,6 @@
     }
 
     $: {
-        // console.log('user', selectedUser);
-        // console.log('current', currentMessages);
-        // console.log('server', data);
         if(selectedUser !== ''){
             const userRef = ref(db, 'messages/' + selectedUser);
             onValue(userRef, (snapshot) => {
@@ -279,9 +270,6 @@
         });
     }
 
-    async function handleData(data) {
-    }
-
     const readCSV = async (file) => {
         return new Promise(resolve => {
             papa.parse(file, {
@@ -294,32 +282,20 @@
         });
     };
 
-    async function parseCSV(file) {
-        papa.parse(file, {
-            header: true,
-            complete: function (results) {
-                handleData(results.data);
-            }
-        });
-    }
-
     function handleRemove(index){
         massData.splice(index, 1);
         massData = massData;
     }
-
 
     let massMessage = '';
     function getMoney(){
         massData.forEach(function(data){
             writeUserData(data.phone, massMessage, 'sent', data.name);
         });
-        massData = [];
-        massData = massData;
-        massMessage = '';
+        clearMassData();
     }
 
-    function clearAll(){
+    function clearMassData(){
         massData = [];
         massData = massData;
         massMessage = '';
@@ -384,7 +360,7 @@
         <div class=container id=mass>
             <h3>mass text</h3>
             <input type="file" id=file-input bind:files on:change={handleChange}>
-            <button id=clear on:click={()=>clearAll()}>clear</button>
+            <button id=clear on:click={()=>clearMassData()}>clear</button>
             <div class=names-container>
                 {#each massData as data, index}
                     <span class=name>{data.name} - {data.phone} - {data.email}
@@ -429,6 +405,41 @@
         padding: .5rem;
         border-radius: 1rem;
         border: 1px solid #C3CEDA;
+    }
+
+    .message {
+        border-radius: 1rem;
+        padding: 0;
+        background-color: none;
+        background: none;
+        max-width: 80%;
+    }
+
+    #sent {
+        background-color: #07a3ee;
+        color: azure;
+        padding: 10px 20px;
+        max-width: 50%;
+        min-width: 50px;
+        border-radius: 5px;
+        border: none;
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
+        text-align: center;
+        float: right;
+        margin-left: auto;
+    }
+
+    #received {
+        background-color: #5b758f;
+        color: azure;
+        padding: 10px 20px;
+        border-radius: 5px;
+        min-width: 50px;
+        max-width: 50%;
+        border: none;
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
+        text-align: center;
+        float: left;
     }
 
     .name {
@@ -574,13 +585,6 @@
         padding: 1rem;
     }
 
-    .message {
-        border-radius: 1rem;
-        padding: 0;
-        background-color: none;
-        background: none;
-        max-width: 80%;
-    }
 
     .message-content {
         display: flex;
