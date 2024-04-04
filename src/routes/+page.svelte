@@ -59,7 +59,7 @@
             data = snapshot.val();
             data = data;
             currentMessages = data.messages;
-            console.log('data', data);
+            // console.log('data', data);
         });
         await tick();
     }
@@ -105,13 +105,16 @@
     $: {
         Object.keys(usersData).forEach(phone => {
             users.add(phone);
-            users = users;
         });
+        users = users;
         //sort users by last message timestamp
         users = new Set([...users].sort((a, b) => {
-            return usersData[b].data.timestamp - usersData[a].data.timestamp;
+            // console.log('usersData');
+            return (usersData[b].data.timestamp || Infinity) - (usersData[a].data.timestamp || Infinity);
         }));
-        console.log(usersData);
+        users = users;
+        // console.log('sorted users', usersData);
+
     }
 
     $: {
@@ -145,15 +148,7 @@
 
     let inputMessage = '';
 
-    function handleSend(){
-        writeUserData(selectedUser, inputMessage, 'sent', userName);
-        let to = formatPhone(selectedUser);
-        let message = {
-          to: to,
-          body: inputMessage,
-        }
-        handleUser(selectedUser);
-
+    function sendTwilioMessage(message){
       //send message to twilio api https://gnschat-9300.twil.io/welcome
       const response = fetch('https://gnschat-9300.twil.io/welcome', {
           method: 'POST',
@@ -164,13 +159,53 @@
         })
         .then(response => response.json())
         .then(data => {
-          console.log('Success:', data);
+        //   console.log('Success:', data);
         })
         .catch((error) => {
           console.error('Error:', error);
         });
-        // getUserData(selectedUser);
+    }
+
+    function handleSend(mass=false){
+        writeUserData(selectedUser, inputMessage, 'sent', userName);
+        let to = formatPhone(selectedUser);
+        let message = {
+          to: to,
+          body: inputMessage,
+        }
+        // if(mass){
+        //     massData.forEach(function(data){
+        //         writeUserData(data.phone, inputMessage, 'sent', data.name);
+        //     });
+        //     clearMassData();
+        // }
+
+        handleUser(selectedUser);
+        sendTwilioMessage(message);
+
         inputMessage = '';
+    }
+
+    function sendMassText(){
+        let formattedPhone;
+        let formattedMessage;
+        massData.forEach(function(data){
+            formattedPhone = formatPhone(data.phone);
+            formattedMessage = "Hello " + data.name + ", " + massMessage;
+            writeUserData(data.phone, formattedMessage, 'sent', data.name);
+            //regex for valid phone number
+            if(!formattedPhone.match(/^\+1\d{10}$/)){
+                console.error('Invalid phone number: ', formattedPhone);
+                console.log('Phone number must be in the format +1XXXXXXXXXX: ', formattedPhone);
+                return;
+            }else{
+                sendTwilioMessage({
+                    to: formatPhone(data.phone),
+                    body: formattedMessage,
+                })
+            }
+        });
+        clearMassData();
     }
 
     let editUserName = false;
@@ -197,10 +232,24 @@
             messageState = null;
             return;
         }else if(messageState === 'chat'){
-            selectedUser = '';
+            // selectedUser = '';
             messageState = 'mass';
         }else{
             messageState = 'mass';
+        }
+    }
+
+    function handleChat(){
+        if(messageState === 'chat'){
+            // messageState = null;
+            messageState = null;
+            currentMessages = [];
+            selectedUser = '';
+            return;
+        }else if(messageState === 'mass'){
+            messageState = 'chat';
+        }else{
+            messageState = 'chat';
         }
     }
 
@@ -210,11 +259,12 @@
                 handleSend();
             }
         }else{
-            console.log('Key pressed: ', event.key);
+            // console.log('Key pressed: ', event.key);
         }
     }
 
     let files;
+    let fileElement;
 
 
     let massData = [];
@@ -222,7 +272,7 @@
         let files = event.target.files;
         let dat = await readCSV(files[0]);
         sortData(dat);
-        console.log(massData);
+        // console.log(massData);
     }
 
     function formatPhone(phone) {
@@ -289,16 +339,19 @@
 
     let massMessage = '';
     function getMoney(){
-        massData.forEach(function(data){
-            writeUserData(data.phone, massMessage, 'sent', data.name);
-        });
-        clearMassData();
+        // massData.forEach(function(data){
+        //     writeUserData(data.phone, massMessage, 'sent', data.name);
+        // });
+        // clearMassData();
+        sendMassText();
     }
 
     function clearMassData(){
         massData = [];
         massData = massData;
         massMessage = '';
+        files = null;
+        fileElement.value = '';
     }
 
 </script>
@@ -307,7 +360,7 @@
 <div class=content>
     <div class=container id=users>
         <div class=title-bar>
-            <h3>users</h3>
+            <button class=edit id={messageState==='chat'?'selected':''} on:click={()=>handleChat()}>messages</button>
             <button class=edit id={messageState==='mass'?'selected':''} on:click={()=>handleMass()}>create mass text</button>
         </div>
         {#if users.size === 0}
@@ -359,17 +412,17 @@
     {:else if messageState === 'mass'}
         <div class=container id=mass>
             <h3>mass text</h3>
-            <input type="file" id=file-input bind:files on:change={handleChange}>
+            <input type="file" id=file-input bind:files bind:this={fileElement} on:change={handleChange}>
             <button id=clear on:click={()=>clearMassData()}>clear</button>
             <div class=names-container>
                 {#each massData as data, index}
-                    <span class=name>{data.name} - {data.phone} - {data.email}
+                    <span class=name>{data.name} - {data.phone}
                         <button id=remove on:click={()=>handleRemove(index)}>remove</button>
                      </span>
                 {/each}
             </div>
-            <textarea bind:value={massMessage} rows=5 placeholder="Enter your message and make more money than you could ever imagine" name="message" id="mass-text"></textarea>
-            <button on:click={()=>getMoney()} id=MONEY>GET DAT MONEY BABY</button>
+            <textarea bind:value={massMessage} rows=5 placeholder="Enter your message" name="message" id="mass-text"></textarea>
+            <button on:click={()=>getMoney()} id=MONEY>Send Message</button>
         </div>
     {:else}
         <div class=container id=mass>
@@ -379,9 +432,25 @@
 
 </div>
 
+<!-- create confirmation overlay for mass text -->
+
+<!-- <div class=confirm id={confirmMessage===true?'confirmMessage':''}>
+</div> -->
+
 
 
 <style>
+    .confirm {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0, 0, 0, 0.5);
+        z-index: 1;
+    }
+
 
     #clear {
         text-align: center;
@@ -409,37 +478,27 @@
 
     .message {
         border-radius: 1rem;
-        padding: 0;
         background-color: none;
         background: none;
-        max-width: 80%;
+        padding: 10px 20px;
+        border-radius: 5px;
+        max-width: 50%;
+        min-width: 50px;
+        border: none;
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
+        text-align: center;
     }
 
     #sent {
         background-color: #07a3ee;
         color: azure;
-        padding: 10px 20px;
-        max-width: 50%;
-        min-width: 50px;
-        border-radius: 5px;
-        border: none;
-        transition: transform 0.3s ease, box-shadow 0.3s ease;
-        text-align: center;
-        float: right;
         margin-left: auto;
     }
 
     #received {
         background-color: #5b758f;
         color: azure;
-        padding: 10px 20px;
-        border-radius: 5px;
-        min-width: 50px;
-        max-width: 50%;
-        border: none;
-        transition: transform 0.3s ease, box-shadow 0.3s ease;
-        text-align: center;
-        float: left;
+        margin-right: auto;
     }
 
     .name {
@@ -474,6 +533,7 @@
         overflow-y: scroll;
         max-height: 50%;
         min-height: 50%;
+        width: 100%;
         gap: .5rem;
     }
 
