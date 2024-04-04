@@ -196,11 +196,9 @@
         if(massMessage.trim() === '') return;
         let formattedPhone;
         let formattedMessage;
-        let formattedName;
         massData.forEach(function(data){
             formattedPhone = formatPhone(data.phone);
-            formattedName = getFirstName(data.name);
-            formattedMessage = "Hello " + formattedName + ", " + massMessage;
+            formattedMessage = massMessage;
             writeUserData(data.phone, formattedMessage, 'sent', data.name);
             //regex for valid phone number
             if(!formattedPhone.match(/^\+1\d{10}$/)){
