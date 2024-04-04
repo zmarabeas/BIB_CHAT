@@ -20,7 +20,7 @@
 </div>
 
 <div class=footer style='background-color: {footerColor}; color: {textColor}'>
-    <h4>ello</h4>
+    <h4>BIB Chat™️</h4>
 </div>
 
 <style>
