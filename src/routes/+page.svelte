@@ -305,6 +305,7 @@
 
     function sortData(data) {
         massData = [];
+        let phoneNumbers = []; //store phone numbers to check for duplicates
         let phoneKey = 'PHONE NUMBER';
         let noteKey = 'NOTE'
         let nameKey = 'NAME';
@@ -316,13 +317,16 @@
             let email = row[emailKey];
 
             if(phone && name){
-                massData.push({
-                    name: name,
-                    phone: phone,
-                    note: note,
-                    email: email || '',
-                });
-                massData = massData;
+                if(!phoneNumbers.includes(phone)){
+                    phoneNumbers.push(phone);
+                    massData.push({
+                        name: name,
+                        phone: phone,
+                        note: note,
+                        email: email || '',
+                    });
+                    massData = massData;
+                }
             }
         });
     }
