@@ -303,6 +303,13 @@
         return nameString;
     }
 
+    function convertTimeStamp(timestamp){
+        let ts = parseInt(timestamp);
+        let date = new Date(ts);
+        let formattedDate = date.toLocaleString();
+        return formattedDate;
+    }
+
     function sortData(data) {
         massData = [];
         let phoneNumbers = []; //store phone numbers to check for duplicates
@@ -405,7 +412,10 @@
             <div class=message-content>
                 {#if currentMessages}
                     {#each Object.keys(currentMessages).reverse() as message}
-                        <p class=message id={currentMessages[message].type}>{currentMessages[message].message}</p>
+                        <div class=message-wrapper>
+                            <p class=message id={currentMessages[message].type}>{currentMessages[message].message}</p>
+                            <p class=timestamp id={currentMessages[message].type}>{convertTimeStamp(message)}</p>
+                        </div>
                     {/each}
                 {:else}
                     <p>No messages</p>
@@ -462,6 +472,13 @@
         z-index: 1;
     }
 
+    .message-wrapper {
+        display: flex;
+        flex-direction: column;
+        gap: .5rem;
+    }
+
+
 
     #clear {
         text-align: center;
@@ -495,6 +512,7 @@
         border-radius: 5px;
         max-width: 50%;
         min-width: 50px;
+        margin-bottom: 0px;
         border: none;
         transition: transform 0.3s ease, box-shadow 0.3s ease;
         text-align: center;
@@ -654,6 +672,22 @@
         border-radius: 1rem;
         overflow: scroll;
         padding: 1rem;
+    }
+
+    .timestamp {
+        font-size: .8rem;
+        color: #5b758f;
+        margin: 0;
+    }
+
+    #sent.timestamp {
+        color: grey;
+        background-color: rgba(0, 0, 0, 0);
+    }
+
+    #received.timestamp {
+        color: grey;
+        background-color: rgba(0, 0, 0, 0);
     }
 
 
