@@ -284,6 +284,16 @@
 
     function formatPhone(phone) {
         let phoneString = phone.toString();
+
+        let noContactFlags = [ 'NIS', 'DNC', 'NO CONTACT', 'no contact', 
+          'No Contact', 'DO NOT CALL', 'nis', 'dnc'];
+        noContactFlags.forEach((flag) => {
+          if(phoneString.includes(flag)){
+            console.error('No contact phone number: ', phoneString);
+            phoneString = '';
+          }
+        });
+
         // reformat from (123) 456-7890 to +11234567890
         phoneString = phoneString.replace(/\D/g, '');
         if(phoneString.length === 10){
@@ -295,7 +305,7 @@
         if(!phoneString.match(/^\+1\d{10}$/)){
             console.error('Invalid phone number: ', phoneString);
             //console.log('Phone number must be in the format +1XXXXXXXXXX: ', phoneString);
-            return null;
+            phoneString = null;
         }
 
         return phoneString;
