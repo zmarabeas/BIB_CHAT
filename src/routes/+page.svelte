@@ -203,7 +203,7 @@
             //regex for valid phone number
             if(!formattedPhone.match(/^\+1\d{10}$/)){
                 console.error('Invalid phone number: ', formattedPhone);
-                console.log('Phone number must be in the format +1XXXXXXXXXX: ', formattedPhone);
+                //console.log('Phone number must be in the format +1XXXXXXXXXX: ', formattedPhone);
                 return;
             }else{
                 sendTwilioMessage({
@@ -291,11 +291,21 @@
         }else if(phoneString.length === 11){
             phoneString = '+' + phoneString;
         }
+  
+        if(!phoneString.match(/^\+1\d{10}$/)){
+            console.error('Invalid phone number: ', phoneString);
+            //console.log('Phone number must be in the format +1XXXXXXXXXX: ', phoneString);
+            return null;
+        }
+
         return phoneString;
     }
 
     function formatName(name) {
         // reformat name from all caps to first letter caps
+        if(!name){
+            return 'Default';
+        }
         let nameString = name.toString();
         nameString = nameString.toLowerCase();
         //capitalize the first letter of each word
@@ -310,6 +320,7 @@
         return formattedDate;
     }
 
+    let duplicatePhoneNumbers = [];
     function sortData(data) {
         massData = [];
         let phoneNumbers = []; //store phone numbers to check for duplicates
@@ -319,24 +330,52 @@
         let emailKey = 'EMAIL';
         data.forEach(function(row){
             let name = formatName(row[nameKey]);
-            let phone = formatPhone(row[phoneKey]);
+            let phone = row[phoneKey];
             let note = row[noteKey];
             let email = row[emailKey];
 
-            if(phone && name){
-                if(!phoneNumbers.includes(phone)){
-                    phoneNumbers.push(phone);
-                    massData.push({
-                        name: name,
-                        phone: phone,
-                        note: note,
-                        email: email || '',
-                    });
-                    massData = massData;
+            if(!phone){
+                console.error('Invalid phone number: ', phone);
+            }else if(phone.includes('/')){
+              let phoneArray = phone.split('/');
+              phoneArray.forEach((phoneNumber) => {
+                phone = formatPhone(phoneNumber);
+                if(phone){
+                    if(!phoneNumbers.includes(phone)){
+                        phoneNumbers.push(phone);
+                        massData.push({
+                            name: name || 'Default',
+                            phone: phone,
+                            note: note,
+                            email: email || '',
+                        });
+                        massData = massData;
+                    }else{
+                        duplicatePhoneNumbers.push(phone);
+                    }
                 }
+              });
+            }else{
+              phone = formatPhone(phone);
+              if(phone){
+                  if(!phoneNumbers.includes(phone)){
+                      phoneNumbers.push(phone);
+                      massData.push({
+                          name: name || 'Default',
+                          phone: phone,
+                          note: note,
+                          email: email || '',
+                      });
+                      massData = massData;
+                  }else{
+                    duplicatePhoneNumbers.push(phone);
+                  }
+              }
             }
         });
+        duplicatePhoneNumbers = duplicatePhoneNumbers;
     }
+
 
     const readCSV = async (file) => {
         return new Promise(resolve => {
@@ -367,6 +406,7 @@
     function clearMassData(){
         massData = [];
         massData = massData;
+        duplicatePhoneNumbers = [];
         massMessage = '';
         files = null;
         fileElement.value = '';
@@ -434,7 +474,11 @@
         <div class=container id=mass>
             <h3>mass text</h3>
             <input type="file" id=file-input bind:files bind:this={fileElement} on:change={handleChange}>
-            <button id=clear on:click={()=>clearMassData()}>clear</button>
+            <div class=mass-info-wrapper>
+              <button id=clear on:click={()=>clearMassData()}>clear</button>
+              <h4>Number of contacts: {massData.length}</h4>
+              <h4>Duplicate phone numbers: {duplicatePhoneNumbers.length}</h4>
+            </div>
             <div class=names-container>
                 {#each massData as data, index}
                     <span class=name>{data.name} - {data.phone}
@@ -461,6 +505,16 @@
 
 
 <style>
+
+    .mass-info-wrapper {
+      display: flex;
+      flex-direction: row;
+      justify-content: space-between;
+      align-items: center;
+      gap: 1rem;
+      width: 100%;
+    }
+
     .confirm {
         display: none;
         position: fixed;
@@ -485,6 +539,9 @@
         position: relative;
         top: 0;
         left: 0;
+        max-width: 30%;
+        width: 30%;
+        min-width: 30%;
     }
 
     .buttontext {
@@ -515,7 +572,7 @@
         margin-bottom: 0px;
         border: none;
         transition: transform 0.3s ease, box-shadow 0.3s ease;
-        text-align: center;
+        text-align: left;
     }
 
     #sent {
