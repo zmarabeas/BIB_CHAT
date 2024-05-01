@@ -113,6 +113,7 @@
             return (usersData[b].data.timestamp || Infinity) - (usersData[a].data.timestamp || Infinity);
         }));
         users = users;
+        console.log('sorted users', users);
         // console.log('sorted users', usersData);
 
     }
@@ -278,6 +279,7 @@
     async function handleChange(event) {
         let files = event.target.files;
         let dat = await readCSV(files[0]);
+        duplicatePhoneNumbers = [];
         sortData(dat);
         // console.log(massData);
     }
@@ -351,7 +353,7 @@
               phoneArray.forEach((phoneNumber) => {
                 phone = formatPhone(phoneNumber);
                 if(phone){
-                    if(!phoneNumbers.includes(phone)){
+                    if(!phoneNumbers.includes(phone) && !users.has(phone)){
                         phoneNumbers.push(phone);
                         massData.push({
                             name: name || 'Default',
@@ -362,13 +364,14 @@
                         massData = massData;
                     }else{
                         duplicatePhoneNumbers.push(phone);
+                        console.error('Phone number already exists: ', phone);
                     }
                 }
               });
             }else{
               phone = formatPhone(phone);
               if(phone){
-                  if(!phoneNumbers.includes(phone)){
+                  if(!phoneNumbers.includes(phone) && !users.has(phone)){
                       phoneNumbers.push(phone);
                       massData.push({
                           name: name || 'Default',
@@ -379,6 +382,7 @@
                       massData = massData;
                   }else{
                     duplicatePhoneNumbers.push(phone);
+                    console.error('Phone number already exists: ', phone);
                   }
               }
             }
