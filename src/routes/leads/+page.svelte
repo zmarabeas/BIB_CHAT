@@ -184,7 +184,7 @@
 
   .divider {
     height: 2px;
-    background-color: #333;
+    background-color: rgba(7,20,48, 0.3);
     border-radius: 1px;
     width: 100%;
   }
@@ -217,14 +217,13 @@
 
   button {
     padding: 0.5rem 1rem;
-    background-color: #333;
+    background-color: #071430;
     color: white;
     border: none;
     cursor: pointer;
   }
 
   button:hover {
-    background-color: #555;
   }
 
   p {
