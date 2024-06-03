@@ -90,15 +90,15 @@
     {:else if selectedLead !== null}
       <div class=wrapper>
         <button  class=back on:click={() => selectedLead = null}>Back</button>
-        <div class=lead-info>
-          <h2>{selectedLead.name}</h2>
-          <h2>{selectedLead.phone || '-'}</h2>
-          <h2>{selectedLead.email || '-'}</h2>
+        <div class=title-info>
+          <h2>Name: {selectedLead.name}</h2>
+          <h2>Phone: {selectedLead.phone || '-'}</h2>
+          <h2>Email: {selectedLead.email || '-'}</h2>
           <h2>Type: {selectedLead.type}</h2>
           <h2>Status: {selectedLead.status}</h2>
         </div>
+         <div class=divider></div>
         <h2>Question information</h2>
-        <div class=divider></div>
         {#each Object.keys(selectedLead.questions) as question}
           {#if typeof(selectedLead.questions[question]) === 'object'}
             {#if getQuestionInfo(selectedLead.questions[question]) !== null}
@@ -106,7 +106,7 @@
                 {#each Object.keys(selectedLead.questions[question]) as subQuestion}
                     {#if getQuestionInfo(selectedLead.questions[question]) !== null}
                       <div class=lead-info>
-                        <p>{subQuestion}</p>
+                        <p>{subQuestion}:</p>
                         <p>{selectedLead.questions[question][subQuestion]}</p>
                       </div>
                     {/if}
@@ -206,6 +206,12 @@
 
   .lead-info {
     display: flex;
+    gap: 1rem;
+  }
+
+  .title-info{
+    display: flex;
+    flex-direction: column;
     gap: 1rem;
   }
 
