@@ -131,12 +131,12 @@
       </div>
     {:else}
       {#each leads as lead}
-        <div class=lead-info>
-          <p>Name</p>
-          <p>Phone</p>
-          <p>Email</p>
-          <p>Type</p>
-          <p>Status</p>
+        <div class=header-info>
+          <p>Name:</p>
+          <p>Phone:</p>
+          <p>Email:</p>
+          <p>Type:</p>
+          <p>Status:</p>
         </div>
         <div class=wrapper>
           <div class=lead-info>
@@ -213,6 +213,13 @@
     display: flex;
     flex-direction: column;
     gap: 1rem;
+  }
+
+  .header-info {
+    display: flex;
+    gap: 1rem;
+    font-weight: bold;
+    text-decoration: underline;
   }
 
   button {
