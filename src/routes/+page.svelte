@@ -18,6 +18,8 @@ get sent to the person who just messaged me
 
     */
 
+    let users = new Set();
+
     let userName = null;
     function writeUserData(phone, message, type='sent', name='Default') {
         const timestamp = Date.now();
@@ -86,6 +88,8 @@ get sent to the person who just messaged me
         const userRef = ref(db, 'users/');
         onValue(userRef, (snapshot) => {
             usersData = snapshot.val();
+            usersData = usersData;
+            users = sortUsersByTimestamp(usersData);
         }, {
         });
     }
@@ -116,7 +120,22 @@ get sent to the person who just messaged me
     }); 
 
 
-    let users = new Set();
+    function sortUsersByTimestamp(usersData){
+        let u = new Set();
+        Object.keys(usersData).forEach(phone => {
+            u.add(phone);
+        });
+        u = u;
+        //sort users by last message timestamp
+        let ret = new Set([...users].sort((a, b) => {
+            return (usersData[b].data.timestamp || Infinity) - (usersData[a].data.timestamp || Infinity);
+        }));
+        ret = ret;
+        console.log(u, ret);
+        return ret;
+    }
+
+
     $: {
         Object.keys(usersData).forEach(phone => {
             users.add(phone);
@@ -124,10 +143,10 @@ get sent to the person who just messaged me
         users = users;
         //sort users by last message timestamp
         users = new Set([...users].sort((a, b) => {
-            // console.log('usersData');
             return (usersData[b].data.timestamp || Infinity) - (usersData[a].data.timestamp || Infinity);
         }));
         users = users;
+        console.log(users)
 
     }
 
@@ -456,9 +475,9 @@ get sent to the person who just messaged me
       try{
         let search = searchValue.toLowerCase();
         if(search === ''){
-            users = new Set(Object.keys(usersData));
+            {/* users = new Set(Object.keys(usersData)); */}
+            users = sortUsersByTimestamp(usersData);
         }else{
-
           users = new Set(Array.from(users).filter(user => {
             return usersData[user].info.name.toLowerCase().includes(search) 
             || usersData[user].data.lastMessage.toLowerCase().includes(search)
