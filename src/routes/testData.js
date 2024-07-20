@@ -1,17 +1,58 @@
 
 
-export let testData = [
-    {
-    phone: '+16044494501',
-    message: 'where did you get that transmog?',
-    name: 'neurion',
+// export let testData = [
+//     {
+//       info: {
+//         name: 'neurion',
+//         phone: '+16044494501',
+//       },
+//       data: {
+//         lastMessage: 'where did you get that transmog?',
+//         timestamp: '2020-10-10 10:10:10',
+//         name: 'neurion',
+//         phone: '+16044494501',
+//       }
+//     },
+//     {
+//       info: {
+//         name: 'twilio bot',
+//         phone: '+18777804236',
+//       },
+//       data: {
+//         lastMessage: 'where did you get that transmog?',
+//         timestamp: '2020-10-10 10:10:10',
+//         name: 'twilio bot',
+//         phone: '+18777804236',
+//     }
+//   }
+// ];
+
+export let testData = {
+  '+16044494501': {
+    data: {
+      lastMessage: 'where did you get that transmog?',
+      timestamp: '2020-10-10 10:10:10',
+      name: 'neurion',
+      phone: '+16044494501',
     },
-    {
-    phone: '+18777804236',
-    message: 'where did you get that transmog?',
-    name: 'twilio bot',
+    info: {
+      name: 'neurion',
+      phone: '+16044494501',
     }
-];
+  },
+  '+18777804236': {
+    data: {
+      lastMessage: 'where did you get that transmog?',
+      timestamp: '2020-10-10 10:10:10',
+      name: 'twilio bot',
+      phone: '+18777804236',
+    },
+    info: {
+      name: 'twilio bot',
+      phone: '+18777804236',
+    }
+  }
+};
 
 export let dummyMessageData = [
     {

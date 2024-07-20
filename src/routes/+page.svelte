@@ -1,9 +1,22 @@
 <script>
     import { FirebaseDB as db } from '$lib/firebase/firebase.js';
-    import { getDatabase, orderByChild,  ref, set, update, child, onValue, onChildAdded } from "firebase/database";
+    import { getDatabase, orderByChild, off,  ref, set, update, child, onValue, onChildAdded } from "firebase/database";
     import { onMount, tick } from 'svelte';
     import papa from 'papaparse';
     import { testData, dummyMessageData } from './testData.js';
+
+
+
+    /*
+
+
+ - I’m typing to someone when someone 
+msgs me it will go to the chat of the person who messaged me last 
+
+ - And the message I was typing for the last person can 
+get sent to the person who just messaged me
+
+    */
 
     let userName = null;
     function writeUserData(phone, message, type='sent', name='Default') {
@@ -58,6 +71,7 @@
         onValue(userRef, (snapshot) => {
             data = snapshot.val();
             data = data;
+
             currentMessages = data.messages;
             // console.log('data', data);
         });
@@ -97,7 +111,8 @@
 
     let dat;
     onMount(() => {
-        getAllUserData();
+        //getAllUserData();
+        usersData = testData;
     }); 
 
 
@@ -113,21 +128,19 @@
             return (usersData[b].data.timestamp || Infinity) - (usersData[a].data.timestamp || Infinity);
         }));
         users = users;
-        console.log('sorted users', users);
-        // console.log('sorted users', usersData);
 
     }
 
+    let selectedUserRef = null; 
     $: {
         if(selectedUser !== ''){
-            const userRef = ref(db, 'messages/' + selectedUser);
-            onValue(userRef, (snapshot) => {
+            selectedUserRef = ref(db, 'messages/' + selectedUser);
+            onValue(selectedUserRef, (snapshot) => {
                 data = snapshot.val();
                 data = data;
             });
 
         }
-
     }
 
     let currentMessages = [];
@@ -135,6 +148,13 @@
     let selectedUser = '';
     async function handleUser(user){
         if(user === selectedUser) return;
+
+        
+        //remove previous listener
+        if(selectedUserRef){
+          off(selectedUserRef);
+          selectedUserRef = null;
+        }
 
         messageState = 'chat';
         selectedUser = user;
@@ -426,6 +446,26 @@
         fileElement.value = '';
     }
 
+    let numUsers = 10;
+    let searchValue = '';
+
+    $: {
+      try{
+        let search = searchValue.toLowerCase();
+        if(search === ''){
+            users = new Set(Object.keys(usersData));
+        }else{
+
+          users = new Set(Array.from(users).filter(user => {
+            return usersData[user].info.name.toLowerCase().includes(search) 
+            || usersData[user].data.lastMessage.toLowerCase().includes(search)
+            || user.includes(search);
+          }));
+        }
+      }catch(e){
+        console.error(e);
+      }
+    }
 </script>
 
 
@@ -435,16 +475,18 @@
             <button class=edit id={messageState==='chat'?'selected':''} on:click={()=>handleChat()}>messages</button>
             <button class=edit id={messageState==='mass'?'selected':''} on:click={()=>handleMass()}>create mass text</button>
         </div>
+        <input type="text" bind:value={searchValue} placeholder="search name, phone, or messages">
         {#if users.size === 0}
             <p>No users</p>
         {:else}
-            {#each Array.from(users) as user}
+            {#each Array.from(users).slice(0, numUsers) as user}
                 <button id={selectedUser===user?'selected':''} on:click={()=>handleUser(user)}>
                     <span class=buttontext>
                         {(usersData[user].info.name==='Default'?user:usersData[user].info.name) + ' - ' + usersData[user].data.lastMessage}
                     </span>
                 </button>
             {/each}
+            <button on:click={()=>numUsers = numUsers + 10}>show more</button>
         {/if}
     </div>
 
