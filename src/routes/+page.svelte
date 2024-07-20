@@ -111,8 +111,8 @@ get sent to the person who just messaged me
 
     let dat;
     onMount(() => {
-        //getAllUserData();
-        usersData = testData;
+        getAllUserData();
+        // usersData = testData;
     }); 
 
 
@@ -130,6 +130,9 @@ get sent to the person who just messaged me
         users = users;
 
     }
+
+
+    //TODO: Look into chat changing screens when a new message is received
 
     let selectedUserRef = null; 
     $: {
