@@ -18,7 +18,6 @@ get sent to the person who just messaged me
 
     */
 
-    let users = new Set();
 
     let userName = null;
     function writeUserData(phone, message, type='sent', name='Default') {
@@ -122,8 +121,6 @@ get sent to the person who just messaged me
       }, {
         onlyOnce: true,
       });
-      console.log('engagedUsers', engagedUsers);
-      console.log('unresponsiveUsers', unresponsiveUsers);
     }
 
     function getUnresponsiveUsers(){
@@ -161,15 +158,12 @@ get sent to the person who just messaged me
 
     function cleanServerData(){
       //remove all users without data from the server
-      console.log('asdfasdfasdfa');
       let userRef = ref(db, 'users/');
       onValue(userRef, (snapshot) => {
         let users = snapshot.val();
-        console.log(users);
         Object.keys(users).forEach(phone => {
           let user = users[phone];
           if(!user.data){
-            console.log('removing user: ', phone);
             set(ref(db, 'users/' + phone), null).then(() => {
               // console.log('Data written successfully!');
             }).catch((error) => {
@@ -573,11 +567,13 @@ get sent to the person who just messaged me
     }
 
     let unsortedUsers = new Set();
+    let engagedUsers = new Set();
+    let unresponsiveUsers = new Set();
+
     $: {
         Object.keys(usersData).forEach(phone => {
             unsortedUsers.add(phone);
         });
-        console.log('u', unsortedUsers);
         unsortedUsers = unsortedUsers;
         //sort users by last message timestamp
         users = [...unsortedUsers].sort((a, b) => {
@@ -586,7 +582,36 @@ get sent to the person who just messaged me
         });
         users = users;
         tick();
-        console.log(users);
+
+        //add engaged users
+
+        unresponsiveUsers = new Set();
+        engagedUsers = new Set();
+        users.forEach(phone => {
+            if(usersData[phone].messagesReceived > 0){
+                engagedUsers.add(phone);
+            }else{
+                unresponsiveUsers.add(phone);
+            }
+        });
+
+        engagedUsers = engagedUsers;
+        unresponsiveUsers = unresponsiveUsers;
+    }
+
+    let userType = 'all';
+
+    $: {
+        if(userType === 'all'){
+            users = Array.from(unsortedUsers);
+        }else if(userType === 'engaged'){
+            users = Array.from(engagedUsers);
+        }else if(userType === 'unresponsive'){
+            users = Array.from(unresponsiveUsers);
+        }
+        users = users;
+        console.log('unsorted', unsortedUsers);
+        console.log('engaged', engagedUsers);
 
     }
 
@@ -598,6 +623,12 @@ get sent to the person who just messaged me
         <div class=title-bar>
             <button class=edit id={messageState==='chat'?'selected':''} on:click={()=>handleChat()}>messages</button>
             <button class=edit id={messageState==='mass'?'selected':''} on:click={()=>handleMass()}>create mass text</button>
+        </div>
+        <h4>users</h4>
+        <div class=title-bar>
+            <button class=edit id={userType==='all'?'selected':''} on:click={()=>userType = 'all'}>all</button>
+             <button class=edit id={userType==='engaged'?'selected':''} on:click={()=>userType = 'engaged'}>engaged</button>   
+             <button class=edit id={userType==='unresponsive'?'selected':''} on:click={()=>userType = 'unresponsive'}>unresponsive</button>  
         </div>
         <input type="text" bind:value={searchValue} placeholder="search name, phone, or messages">
         {#if users.size === 0}
@@ -942,7 +973,7 @@ get sent to the person who just messaged me
     }
 
     #users.container {
-        min-width: 30%;
+        min-width: 33%;
         display: flex;
         flex-direction: column;
         gap: .3rem;
@@ -952,14 +983,14 @@ get sent to the person who just messaged me
 
 
     #chat.container {
-        min-width: 70%;
+        min-width: 66%;
         display: flex;
         flex-direction: column;
         justify-content: space-between;
     }
 
     #mass.container {
-        min-width: 70%;
+        min-width: 66%;
         display: flex;
         flex-direction: column;
         justify-content: flex-start;
