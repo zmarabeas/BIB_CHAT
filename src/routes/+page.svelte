@@ -1,6 +1,6 @@
 <script>
     import { FirebaseDB as db } from '$lib/firebase/firebase.js';
-    import { getDatabase, orderByChild, off,  ref, set, update, child, onValue, onChildAdded } from "firebase/database";
+    import { getDatabase, orderByChild, off, get, ref, set, update, child, onValue, onChildAdded } from "firebase/database";
     import { onMount, tick } from 'svelte';
     import papa from 'papaparse';
     import { testData, dummyMessageData } from './testData.js';
@@ -80,6 +80,61 @@ get sent to the person who just messaged me
         await tick();
     }
 
+    
+    
+
+    async function updateServerData(){
+      //update the server data with the number of messages sent and received
+      //for each user
+      let engagedUsers = [];
+      let unresponsiveUsers = [];
+      console.log('updating server data');
+      let userRef = ref(db, 'messages/');
+      onValue(userRef, (snapshot) => {
+        let users = snapshot.val();
+        Object.keys(users).forEach(phone => {
+          let user = users[phone];
+          let messages = user.messages;
+          let sent = 0;
+          let received = 0;
+          Object.keys(messages).forEach(message => {
+            if(messages[message].type === 'sent'){
+              sent++;
+            }else{
+              received++;
+            }
+          });
+          if(received > 0){
+            engagedUsers.push(phone);
+          }else{
+            unresponsiveUsers.push(phone);
+          }
+          update(ref(db, 'users/' + phone), {
+            messagesSent: sent,
+            messagesReceived: received,
+          }).then(() => {
+            // console.log('Data written successfully!');
+          }).catch((error) => {
+            console.error('Error writing data: ', error);
+            console.log('Data not written successfully!', error);
+          });
+        });
+      }, {
+        onlyOnce: true,
+      });
+      console.log('engagedUsers', engagedUsers);
+      console.log('unresponsiveUsers', unresponsiveUsers);
+    }
+
+    function getUnresponsiveUsers(){
+      let unresponsiveUsers = [];
+      Object.keys(usersData).forEach(phone => {
+      });
+      
+
+      
+    }
+
 
     let messageState = null;
     let data = {};
@@ -104,6 +159,31 @@ get sent to the person who just messaged me
     }
     // writeDummyData();   
 
+    function cleanServerData(){
+      //remove all users without data from the server
+      console.log('asdfasdfasdfa');
+      let userRef = ref(db, 'users/');
+      onValue(userRef, (snapshot) => {
+        let users = snapshot.val();
+        console.log(users);
+        Object.keys(users).forEach(phone => {
+          let user = users[phone];
+          if(!user.data){
+            console.log('removing user: ', phone);
+            set(ref(db, 'users/' + phone), null).then(() => {
+              // console.log('Data written successfully!');
+            }).catch((error) => {
+              console.error('Error writing data: ', error);
+              console.log('Data not written successfully!', error);
+            });
+          }
+        });
+      }, {
+        onlyOnce: true,
+      });
+
+    }
+
     function testUserData() {
         testData.forEach(function(data, index) {
             setTimeout(function(){
@@ -117,6 +197,8 @@ get sent to the person who just messaged me
     onMount(() => {
         getAllUserData();
         // usersData = testData;
+        //updateServerData();
+        //cleanServerData();
     }); 
 
 
@@ -470,6 +552,7 @@ get sent to the person who just messaged me
 
     let numUsers = 10;
     let searchValue = '';
+    let users = [];
 
     $: {
       try{
@@ -488,6 +571,25 @@ get sent to the person who just messaged me
         console.error(e);
       }
     }
+
+    let unsortedUsers = new Set();
+    $: {
+        Object.keys(usersData).forEach(phone => {
+            unsortedUsers.add(phone);
+        });
+        console.log('u', unsortedUsers);
+        unsortedUsers = unsortedUsers;
+        //sort users by last message timestamp
+        users = [...unsortedUsers].sort((a, b) => {
+            // console.log('usersData');
+            return (usersData[b].data.timestamp || Infinity) - (usersData[a].data.timestamp || Infinity);
+        });
+        users = users;
+        tick();
+        console.log(users);
+
+    }
+
 </script>
 
 
