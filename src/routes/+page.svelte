@@ -207,7 +207,6 @@ get sent to the person who just messaged me
             return (usersData[b].data.timestamp || Infinity) - (usersData[a].data.timestamp || Infinity);
         }));
         ret = ret;
-        console.log(u, ret);
         return ret;
     }
 
@@ -222,7 +221,6 @@ get sent to the person who just messaged me
             return (usersData[b].data.timestamp || Infinity) - (usersData[a].data.timestamp || Infinity);
         }));
         users = users;
-        console.log(users)
 
     }
 
@@ -546,14 +544,14 @@ get sent to the person who just messaged me
 
     let numUsers = 10;
     let searchValue = '';
-    let users = [];
+    let users = new Set(); 
 
     $: {
       try{
         let search = searchValue.toLowerCase();
         if(search === ''){
             {/* users = new Set(Object.keys(usersData)); */}
-            users = sortUsersByTimestamp(usersData);
+            users = new Set(sortUsersByTimestamp(usersData));
         }else{
           users = new Set(Array.from(users).filter(user => {
             return usersData[user].info.name.toLowerCase().includes(search) 
@@ -576,10 +574,10 @@ get sent to the person who just messaged me
         });
         unsortedUsers = unsortedUsers;
         //sort users by last message timestamp
-        users = [...unsortedUsers].sort((a, b) => {
+        users = new Set([...unsortedUsers].sort((a, b) => {
             // console.log('usersData');
             return (usersData[b].data.timestamp || Infinity) - (usersData[a].data.timestamp || Infinity);
-        });
+        }));
         users = users;
         tick();
 
@@ -603,15 +601,13 @@ get sent to the person who just messaged me
 
     $: {
         if(userType === 'all'){
-            users = Array.from(unsortedUsers);
+            users = new Set(unsortedUsers);
         }else if(userType === 'engaged'){
-            users = Array.from(engagedUsers);
+            users = new Set(engagedUsers);
         }else if(userType === 'unresponsive'){
-            users = Array.from(unresponsiveUsers);
+            users = new Set(unresponsiveUsers);
         }
         users = users;
-        console.log('unsorted', unsortedUsers);
-        console.log('engaged', engagedUsers);
 
     }
 
