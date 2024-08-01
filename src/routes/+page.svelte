@@ -85,8 +85,6 @@ get sent to the person who just messaged me
     async function updateServerData(){
       //update the server data with the number of messages sent and received
       //for each user
-      let engagedUsers = [];
-      let unresponsiveUsers = [];
       console.log('updating server data');
       let userRef = ref(db, 'messages/');
       onValue(userRef, (snapshot) => {
@@ -103,11 +101,6 @@ get sent to the person who just messaged me
               received++;
             }
           });
-          if(received > 0){
-            engagedUsers.push(phone);
-          }else{
-            unresponsiveUsers.push(phone);
-          }
           update(ref(db, 'users/' + phone), {
             messagesSent: sent,
             messagesReceived: received,
@@ -121,15 +114,6 @@ get sent to the person who just messaged me
       }, {
         onlyOnce: true,
       });
-    }
-
-    function getUnresponsiveUsers(){
-      let unresponsiveUsers = [];
-      Object.keys(usersData).forEach(phone => {
-      });
-      
-
-      
     }
 
 
@@ -542,40 +526,22 @@ get sent to the person who just messaged me
         fileElement.value = '';
     }
 
-    let numUsers = 10;
-    let searchValue = '';
-    let users = new Set(); 
-
-    $: {
-      try{
-        let search = searchValue.toLowerCase();
-        if(search === ''){
-            {/* users = new Set(Object.keys(usersData)); */}
-            users = new Set(sortUsersByTimestamp(usersData));
-        }else{
-          users = new Set(Array.from(users).filter(user => {
-            return usersData[user].info.name.toLowerCase().includes(search) 
-            || usersData[user].data.lastMessage.toLowerCase().includes(search)
-            || user.includes(search);
-          }));
-        }
-      }catch(e){
-        console.error(e);
-      }
-    }
 
     let unsortedUsers = new Set();
     let engagedUsers = new Set();
     let unresponsiveUsers = new Set();
 
-    $: {
+    function updateUsers(){
+        unsortedUsers = new Set();
+        engagedUsers = new Set();
+        unresponsiveUsers = new Set();
+        users = new Set();
         Object.keys(usersData).forEach(phone => {
             unsortedUsers.add(phone);
         });
         unsortedUsers = unsortedUsers;
         //sort users by last message timestamp
         users = new Set([...unsortedUsers].sort((a, b) => {
-            // console.log('usersData');
             return (usersData[b].data.timestamp || Infinity) - (usersData[a].data.timestamp || Infinity);
         }));
         users = users;
@@ -595,20 +561,61 @@ get sent to the person who just messaged me
 
         engagedUsers = engagedUsers;
         unresponsiveUsers = unresponsiveUsers;
+
+        console.log(usersData[Array.from(unresponsiveUsers)[0]]);
+        console.log(unresponsiveUsers);
     }
+
+    $: {
+    }
+
+    setInterval(() => {
+    }, 1000);
 
     let userType = 'all';
 
     $: {
-        if(userType === 'all'){
-            users = new Set(unsortedUsers);
-        }else if(userType === 'engaged'){
-            users = new Set(engagedUsers);
-        }else if(userType === 'unresponsive'){
-            users = new Set(unresponsiveUsers);
-        }
-        users = users;
 
+    }
+
+    let numUsers = 10;
+    let searchValue = '';
+    let users = new Set(); 
+
+    $: {
+      try{
+        let search = searchValue.toLowerCase();
+        if(search === ''){
+            {/* users = new Set(Object.keys(usersData)); */}
+            users = new Set(sortUsersByTimestamp(usersData));
+            updateUsers();
+            if(userType === 'all'){
+                users = new Set(unsortedUsers);
+            }else if(userType === 'engaged'){
+                users = new Set(engagedUsers);
+            }else if(userType === 'unresponsive'){
+                users = new Set(unresponsiveUsers);
+            }
+            users = users;
+        }else{
+          updateUsers();
+          users = new Set(Array.from(users).filter(user => {
+            return usersData[user].info.name.toLowerCase().includes(search) 
+            || usersData[user].data.lastMessage.toLowerCase().includes(search)
+            || user.includes(search);
+          }));
+          if(userType === 'all'){
+              users = new Set(unsortedUsers);
+          }else if(userType === 'engaged'){
+              users = new Set(engagedUsers);
+          }else if(userType === 'unresponsive'){
+              users = new Set(unresponsiveUsers);
+          }
+          users = users;
+        }
+      }catch(e){
+        console.error(e);
+      }
     }
 
 </script>
