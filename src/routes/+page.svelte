@@ -1,6 +1,6 @@
 <script>
     import { FirebaseDB as db } from '$lib/firebase/firebase.js';
-    import { getDatabase, orderByChild, off, get, ref, set, update, child, onValue, onChildAdded } from "firebase/database";
+    import { getDatabase, orderByChild, off, increment, get, ref, set, update, child, onValue, onChildAdded } from "firebase/database";
     import { onMount, tick } from 'svelte';
     import papa from 'papaparse';
     import { testData, dummyMessageData } from './testData.js';
@@ -64,6 +64,17 @@ get sent to the person who just messaged me
             console.error('Error writing data: ', error);
             console.log('Data not written successfully!', error);
         });
+
+        update(ref(db, 'users/' + phone), {
+            messagesSent: increment(type === 'sent' ? 1 : 0),
+            messagesReceived: increment(type === 'received' ? 1 : 0),
+        }).then(() => {
+            // console.log('Data written successfully!');
+        }).catch((error) => {
+            console.error('Error writing data: ', error);
+            console.log('Data not written successfully!', error);
+        });
+
 
     }
 
@@ -175,20 +186,20 @@ get sent to the person who just messaged me
     onMount(() => {
         getAllUserData();
         // usersData = testData;
-        //updateServerData();
+        // updateServerData();
         //cleanServerData();
     }); 
 
 
-    function sortUsersByTimestamp(usersData){
+    function sortUsersByTimestamp(dat){
         let u = new Set();
-        Object.keys(usersData).forEach(phone => {
+        Object.keys(dat).forEach(phone => {
             u.add(phone);
         });
         u = u;
         //sort users by last message timestamp
         let ret = new Set([...users].sort((a, b) => {
-            return (usersData[b].data.timestamp || Infinity) - (usersData[a].data.timestamp || Infinity);
+            return (dat[b].data.timestamp || Infinity) - (dat[a].data.timestamp || Infinity);
         }));
         ret = ret;
         return ret;
@@ -345,6 +356,10 @@ get sent to the person who just messaged me
         }else{
             messageState = 'mass';
         }
+    }
+
+    $: {
+      console.log(users);
     }
 
     function handleChat(){
@@ -561,9 +576,6 @@ get sent to the person who just messaged me
 
         engagedUsers = engagedUsers;
         unresponsiveUsers = unresponsiveUsers;
-
-        console.log(usersData[Array.from(unresponsiveUsers)[0]]);
-        console.log(unresponsiveUsers);
     }
 
     $: {
@@ -586,8 +598,7 @@ get sent to the person who just messaged me
       try{
         let search = searchValue.toLowerCase();
         if(search === ''){
-            {/* users = new Set(Object.keys(usersData)); */}
-            users = new Set(sortUsersByTimestamp(usersData));
+            users = new Set(Object.keys(usersData));
             updateUsers();
             if(userType === 'all'){
                 users = new Set(unsortedUsers);
