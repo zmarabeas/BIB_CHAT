@@ -127,7 +127,7 @@ get sent to the person who just messaged me
         });
         u = u;
         //sort users by last message timestamp
-        let ret = new Set([...users].sort((a, b) => {
+        let ret = new Set([...u].sort((a, b) => {
             return (usersData[b].data.timestamp || Infinity) - (usersData[a].data.timestamp || Infinity);
         }));
         ret = ret;
@@ -478,6 +478,7 @@ get sent to the person who just messaged me
             {/* users = new Set(Object.keys(usersData)); */}
             users = sortUsersByTimestamp(usersData);
         }else{
+          users = sortUsersByTimestamp(usersData);
           users = new Set(Array.from(users).filter(user => {
             return usersData[user].info.name.toLowerCase().includes(search) 
             || usersData[user].data.lastMessage.toLowerCase().includes(search)
