@@ -2,25 +2,14 @@
     import { FirebaseDB as db } from '$lib/firebase/firebase.js';
     import { getDatabase, orderByChild, off,  ref, set, update, child, onValue, onChildAdded } from "firebase/database";
     import { onMount, tick } from 'svelte';
-    import papa from 'papaparse';
-    import { testData, dummyMessageData } from './testData.js';
+    import papa from 'papaparse'; import { testData, dummyMessageData } from './testData.js';
 
 
-
-    /*
-
-
- - I’m typing to someone when someone 
-msgs me it will go to the chat of the person who messaged me last 
-
- - And the message I was typing for the last person can 
-get sent to the person who just messaged me
-
-    */
+    let currentUserRef = '';
 
     let users = new Set();
 
-    let userName = null;
+    let userName = 'Default';
     function writeUserData(phone, message, type='sent', name='Default') {
         const timestamp = Date.now();
 
@@ -31,7 +20,7 @@ get sent to the person who just messaged me
         }
 
         //todo: update with one data structure
-        update(ref(db, 'messages/' + phone + '/messages'), {
+        update(ref(db, currentUserRef + 'messages/' + phone + '/messages'), {
             [timestamp]: {
                 message: message,
                 type: type,
@@ -45,7 +34,7 @@ get sent to the person who just messaged me
 
 
         let userID = phone;
-        update(ref(db, 'users/' + phone + '/data/'), {
+        update(ref(db, currentUserRef + 'users/' + phone + '/data/'), {
                 lastMessage: message,
                 timestamp: timestamp,
         }).then(() => {
@@ -55,7 +44,7 @@ get sent to the person who just messaged me
             console.log('Data not written successfully!', error);
         });
 
-        update(ref(db, 'users/' + phone), {
+        update(ref(db, currentUserRef + 'users/' + phone), {
             ['info']: {
                 name: name,
             }
@@ -69,7 +58,7 @@ get sent to the person who just messaged me
     }
 
     async function getUserData(phone) {
-        const userRef = ref(db, 'messages/' + phone);
+        const userRef = ref(db, currentUserRef + 'messages/' + phone);
         onValue(userRef, (snapshot) => {
             data = snapshot.val();
             data = data;
@@ -85,11 +74,14 @@ get sent to the person who just messaged me
     let data = {};
     let usersData = {};
     function getAllUserData() {
-        const userRef = ref(db, 'users/');
+        // const userRef = ref(db, 'users/');
+        const userRef = ref(db, currentUserRef + 'users/');
+        console.log(userRef);
         onValue(userRef, (snapshot) => {
             usersData = snapshot.val();
             usersData = usersData;
-            users = sortUsersByTimestamp(usersData);
+            console.log('usersData', usersData);
+            //users = sortUsersByTimestamp(usersData);
         }, {
         });
     }
@@ -130,6 +122,21 @@ get sent to the person who just messaged me
         let ret = new Set([...u].sort((a, b) => {
             return (usersData[b].data.timestamp || Infinity) - (usersData[a].data.timestamp || Infinity);
         }));
+
+
+        ret = ret;
+        console.log(u, ret);
+        return ret;
+    }
+
+    function getEngagedUsers(usersData){
+        let u = sortUsersByTimestamp(usersData);
+        let ret = new Set();
+        u.forEach(user => {
+            if(usersData[user].messagesReceived){
+                ret.add(user);
+            }
+        });
         ret = ret;
         console.log(u, ret);
         return ret;
@@ -142,21 +149,21 @@ get sent to the person who just messaged me
         });
         users = users;
         //sort users by last message timestamp
-        users = new Set([...users].sort((a, b) => {
-            return (usersData[b].data.timestamp || Infinity) - (usersData[a].data.timestamp || Infinity);
-        }));
-        users = users;
-        console.log(users)
+        if(!users.length === 0 && !users.length === 1){
+          users = new Set([...users].sort((a, b) => {
+              return (usersData[b].data.timestamp || Infinity) - (usersData[a].data.timestamp || Infinity);
+          }));
+          users = users;
+          console.log(users)
+        }
 
     }
 
 
-    //TODO: Look into chat changing screens when a new message is received
-
     let selectedUserRef = null; 
     $: {
         if(selectedUser !== ''){
-            selectedUserRef = ref(db, 'messages/' + selectedUser);
+            selectedUserRef = ref(db, currentUserRef + 'messages/' + selectedUser);
             onValue(selectedUserRef, (snapshot) => {
                 data = snapshot.val();
                 data = data;
@@ -189,6 +196,12 @@ get sent to the person who just messaged me
         // currentMessages = data[user].messages;
     }
 
+    let usersType = 'all';
+    let engagedUsers = new Set();
+    $: {
+        engagedUsers = getEngagedUsers(usersData);
+    }
+
     let inputMessage = '';
 
     function sendTwilioMessage(message){
@@ -213,16 +226,12 @@ get sent to the person who just messaged me
         if(inputMessage.trim() === '') return;
         writeUserData(selectedUser, inputMessage, 'sent', userName);
         let to = formatPhone(selectedUser);
+        let from = userInfo[currentUserName].phone || '+18254620440';
         let message = {
           to: to,
+          from: from,
           body: inputMessage,
         }
-        // if(mass){
-        //     massData.forEach(function(data){
-        //         writeUserData(data.phone, inputMessage, 'sent', data.name);
-        //     });
-        //     clearMassData();
-        // }
 
         handleUser(selectedUser);
         sendTwilioMessage(message);
@@ -242,6 +251,7 @@ get sent to the person who just messaged me
         massData.forEach(function(data){
             formattedPhone = formatPhone(data.phone);
             formattedMessage = massMessage;
+            formattedMessage += '\n\nSTOP2END';
             writeUserData(data.phone, formattedMessage, 'sent', data.name);
             //regex for valid phone number
             if(!formattedPhone.match(/^\+1\d{10}$/)){
@@ -262,7 +272,7 @@ get sent to the person who just messaged me
 
     let changeUserName = () => {
         editUserName = false;
-        update(ref(db, 'users/' + selectedUser), {
+        update(ref(db, currentUserRef + 'users/' + selectedUser), {
             name: userName,
         }).then(() => {
             // console.log('Data written successfully!');
@@ -302,6 +312,7 @@ get sent to the person who just messaged me
             messageState = 'chat';
         }
     }
+
 
     function submit(event) {
         if (event.key === 'Enter') {
@@ -489,23 +500,137 @@ get sent to the person who just messaged me
         console.error(e);
       }
     }
+
+    let loginStatus = null;
+    let loginSucess = false;
+    let currentUserName = '';
+
+    let userNameInput = '';
+    let passwordInput = '';
+
+
+    let loginCredentials = {
+      'jeremy@squamishdodgejeepram.com': 'Vellichor',
+      'cruz@squamishdodgejeepram.com': 'Serendipity',
+      'wjtibbo@gmail.com': 'Hologram',
+      'ray@greatnorthfinance.com': 'Kaleidoscope',
+      'tenneson@greatnorthfinance.com': 'Juxtapose',
+      'sohrab@greatnorthfinance.com': 'Zephyr',
+      'brandon@greatnorthfinance.com': 'Quagmire',
+      'garrett@squamishdodgejeepram.com': 'Labyrinth',
+      'neima@squamishdodgejeepram.com': 'Nebula',
+      'admin': 'lolxd ;]',
+    }
+
+    let userInfo = {
+      'cruz@squamishdodgejeepram.com': {
+        'name': 'cruz',
+        'password': 'Serendipity',
+        'phone': '+16043054717'
+      },
+      'jeremy@squamishdodgejeepram.com': {
+        'name': 'jeremy',
+        'password': 'Vellichor',
+        'phone': '+16043596071'
+      },
+      'admin': {
+        'name': 'admin',
+        'password': 'lolxd ;]',
+        'phone': '+16043054717'
+      },
+    }
+
+
+    function handleLogin(event){
+      if(event === 'click' || event.key === 'Enter'){
+        if(loginCredentials[userNameInput] === passwordInput){
+            loginSucess = true;
+            loginStatus = 'success';
+            currentUserName = userNameInput;
+            if(currentUserName == 'admin'){
+              currentUserRef = '';
+            }else{
+              currentUserRef = 'textblaster/' + userInfo[currentUserName].name + '/';
+            }
+            getAllUserData();
+
+        }else{
+            loginSucess = false;
+            loginStatus = 'invalid login';
+        }
+      }
+    }
+
+
+
+    let login = async () => {
+        let user = userNameInput;
+        let password = passwordInput;
+        let response = await fetch('https://gnschat-9300.twil.io/login', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                user: user,
+                password: password,
+            }),
+        })
+        .then(response => response.json())
+        .then(data => {
+            console.log('Success:', data);
+            loginSucess = true;
+        })
+        .catch((error) => {
+            console.error('Error:', error);
+        });
+    }
+
+    $: {
+      if(usersType === 'all'){
+        users = sortUsersByTimestamp(usersData);
+      }else if(usersType === 'engaged'){
+        users = engagedUsers;
+      }
+    }
+
+
 </script>
 
 
 <div class=content>
+  {#if !loginSucess}
+    <div class=container id=login>
+        <p>Enter your username and password</p>
+        <input type="text" bind:value={userNameInput} placeholder="username">
+        <input type="password" on:keydown={handleLogin} bind:value={passwordInput} placeholder="password">
+        <button class=login on:click={()=>handleLogin('click')}>Log In</button>
+        {#if loginStatus === 'invalid login'}
+          <p style='text-align: center; margin-top: 30px;'>Invalid login</p>
+        {/if}
+    </div>
+
+
+  {:else if usersData}
     <div class=container id=users>
         <div class=title-bar>
             <button class=edit id={messageState==='chat'?'selected':''} on:click={()=>handleChat()}>messages</button>
             <button class=edit id={messageState==='mass'?'selected':''} on:click={()=>handleMass()}>create mass text</button>
         </div>
         <input type="text" bind:value={searchValue} placeholder="search name, phone, or messages">
+        <div class=usersType>
+            <button class=edit id={usersType==='all'?'selected':''} on:click={()=>usersType = 'all'}>all</button>
+            <button class=edit id={usersType==='engaged'?'selected':''} on:click={()=>usersType = 'engaged'}>engaged</button>
+        </div>
         {#if users.size === 0}
             <p>No users</p>
         {:else}
             {#each Array.from(users).slice(0, numUsers) as user}
                 <button id={selectedUser===user?'selected':''} on:click={()=>handleUser(user)}>
                     <span class=buttontext>
+                      {#if usersData[user].info}
                         {(usersData[user].info.name==='Default'?user:usersData[user].info.name) + ' - ' + usersData[user].data.lastMessage}
+                      {/if}
                     </span>
                 </button>
             {/each}
@@ -574,6 +699,10 @@ get sent to the person who just messaged me
         </div>
     {/if}
 
+  {:else}
+    <p>Loading...</p>
+  {/if}
+
 </div>
 
 <!-- create confirmation overlay for mass text -->
@@ -584,6 +713,26 @@ get sent to the person who just messaged me
 
 
 <style>
+    .usersType {
+      display:flex;
+      flex-direction: row;
+      justify-content: space-between;
+      align-items: center;
+      gap: 1rem;
+    }
+
+    h3.login {
+        text-align: center;
+    }
+
+    button.login {
+        width: 100%;
+        max-width: 100%;
+        min-width: 100%;
+        text-align: center;
+    }
+
+
 
     .mass-info-wrapper {
       display: flex;
@@ -846,6 +995,14 @@ get sent to the person who just messaged me
         flex-direction: column;
         gap: .3rem;
         overflow: scroll;
+    }
+
+    #login.container {
+      min-width: 30%;
+      display: flex;
+      flex-direction: column;
+      gap: .3rem;
+
     }
 
 
