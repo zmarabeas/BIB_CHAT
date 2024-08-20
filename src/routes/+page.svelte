@@ -1,13 +1,12 @@
 <script>
     import { FirebaseDB as db } from '$lib/firebase/firebase.js';
-    import { getDatabase, orderByChild, off,  ref, set, update, child, onValue, onChildAdded } from "firebase/database";
+    import { getDatabase, orderByChild, off, get, ref, set, update, child, onValue, onChildAdded } from "firebase/database";
     import { onMount, tick } from 'svelte';
     import papa from 'papaparse'; import { testData, dummyMessageData } from './testData.js';
 
 
     let currentUserRef = '';
 
-    let users = new Set();
 
     let userName = 'Default';
     function writeUserData(phone, message, type='sent', name='Default') {
@@ -69,6 +68,43 @@
         await tick();
     }
 
+    
+    
+
+    async function updateServerData(){
+      //update the server data with the number of messages sent and received
+      //for each user
+      console.log('updating server data');
+      let userRef = ref(db, 'messages/');
+      onValue(userRef, (snapshot) => {
+        let users = snapshot.val();
+        Object.keys(users).forEach(phone => {
+          let user = users[phone];
+          let messages = user.messages;
+          let sent = 0;
+          let received = 0;
+          Object.keys(messages).forEach(message => {
+            if(messages[message].type === 'sent'){
+              sent++;
+            }else{
+              received++;
+            }
+          });
+          update(ref(db, 'users/' + phone), {
+            messagesSent: sent,
+            messagesReceived: received,
+          }).then(() => {
+            // console.log('Data written successfully!');
+          }).catch((error) => {
+            console.error('Error writing data: ', error);
+            console.log('Data not written successfully!', error);
+          });
+        });
+      }, {
+        onlyOnce: true,
+      });
+    }
+
 
     let messageState = null;
     let data = {};
@@ -96,6 +132,28 @@
     }
     // writeDummyData();   
 
+    function cleanServerData(){
+      //remove all users without data from the server
+      let userRef = ref(db, 'users/');
+      onValue(userRef, (snapshot) => {
+        let users = snapshot.val();
+        Object.keys(users).forEach(phone => {
+          let user = users[phone];
+          if(!user.data){
+            set(ref(db, 'users/' + phone), null).then(() => {
+              // console.log('Data written successfully!');
+            }).catch((error) => {
+              console.error('Error writing data: ', error);
+              console.log('Data not written successfully!', error);
+            });
+          }
+        });
+      }, {
+        onlyOnce: true,
+      });
+
+    }
+
     function testUserData() {
         testData.forEach(function(data, index) {
             setTimeout(function(){
@@ -109,6 +167,8 @@
     onMount(() => {
         getAllUserData();
         // usersData = testData;
+        //updateServerData();
+        //cleanServerData();
     }); 
 
 
@@ -138,7 +198,6 @@
             }
         });
         ret = ret;
-        console.log(u, ret);
         return ret;
     }
 
@@ -156,6 +215,7 @@
           users = users;
           console.log(users)
         }
+
 
     }
 
@@ -479,22 +539,93 @@
         fileElement.value = '';
     }
 
+
+    let unsortedUsers = new Set();
+    let engagedUsers = new Set();
+    let unresponsiveUsers = new Set();
+
+    function updateUsers(){
+        unsortedUsers = new Set();
+        engagedUsers = new Set();
+        unresponsiveUsers = new Set();
+        users = new Set();
+        Object.keys(usersData).forEach(phone => {
+            unsortedUsers.add(phone);
+        });
+        unsortedUsers = unsortedUsers;
+        //sort users by last message timestamp
+        users = new Set([...unsortedUsers].sort((a, b) => {
+            return (usersData[b].data.timestamp || Infinity) - (usersData[a].data.timestamp || Infinity);
+        }));
+        users = users;
+        tick();
+
+        //add engaged users
+
+        unresponsiveUsers = new Set();
+        engagedUsers = new Set();
+        users.forEach(phone => {
+            if(usersData[phone].messagesReceived > 0){
+                engagedUsers.add(phone);
+            }else{
+                unresponsiveUsers.add(phone);
+            }
+        });
+
+        engagedUsers = engagedUsers;
+        unresponsiveUsers = unresponsiveUsers;
+
+        console.log(usersData[Array.from(unresponsiveUsers)[0]]);
+        console.log(unresponsiveUsers);
+    }
+
+    $: {
+    }
+
+    setInterval(() => {
+    }, 1000);
+
+    let userType = 'all';
+
+    $: {
+
+    }
+
     let numUsers = 10;
     let searchValue = '';
+    let users = new Set(); 
 
     $: {
       try{
         let search = searchValue.toLowerCase();
         if(search === ''){
             {/* users = new Set(Object.keys(usersData)); */}
-            users = sortUsersByTimestamp(usersData);
+            users = new Set(sortUsersByTimestamp(usersData));
+            updateUsers();
+            if(userType === 'all'){
+                users = new Set(unsortedUsers);
+            }else if(userType === 'engaged'){
+                users = new Set(engagedUsers);
+            }else if(userType === 'unresponsive'){
+                users = new Set(unresponsiveUsers);
+            }
+            users = users;
         }else{
           users = sortUsersByTimestamp(usersData);
+
           users = new Set(Array.from(users).filter(user => {
             return usersData[user].info.name.toLowerCase().includes(search) 
             || usersData[user].data.lastMessage.toLowerCase().includes(search)
             || user.includes(search);
           }));
+          if(userType === 'all'){
+              users = new Set(unsortedUsers);
+          }else if(userType === 'engaged'){
+              users = new Set(engagedUsers);
+          }else if(userType === 'unresponsive'){
+              users = new Set(unresponsiveUsers);
+          }
+          users = users;
         }
       }catch(e){
         console.error(e);
@@ -594,7 +725,6 @@
       }
     }
 
-
 </script>
 
 
@@ -616,6 +746,12 @@
         <div class=title-bar>
             <button class=edit id={messageState==='chat'?'selected':''} on:click={()=>handleChat()}>messages</button>
             <button class=edit id={messageState==='mass'?'selected':''} on:click={()=>handleMass()}>create mass text</button>
+        </div>
+        <h4>users</h4>
+        <div class=title-bar>
+            <button class=edit id={userType==='all'?'selected':''} on:click={()=>userType = 'all'}>all</button>
+             <button class=edit id={userType==='engaged'?'selected':''} on:click={()=>userType = 'engaged'}>engaged</button>   
+             <button class=edit id={userType==='unresponsive'?'selected':''} on:click={()=>userType = 'unresponsive'}>unresponsive</button>  
         </div>
         <input type="text" bind:value={searchValue} placeholder="search name, phone, or messages">
         <div class=usersType>
@@ -990,7 +1126,7 @@
     }
 
     #users.container {
-        min-width: 30%;
+        min-width: 33%;
         display: flex;
         flex-direction: column;
         gap: .3rem;
@@ -1008,14 +1144,14 @@
 
 
     #chat.container {
-        min-width: 70%;
+        min-width: 66%;
         display: flex;
         flex-direction: column;
         justify-content: space-between;
     }
 
     #mass.container {
-        min-width: 70%;
+        min-width: 66%;
         display: flex;
         flex-direction: column;
         justify-content: flex-start;
