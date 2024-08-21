@@ -251,7 +251,9 @@
         massData.forEach(function(data){
             formattedPhone = formatPhone(data.phone);
             formattedMessage = massMessage;
-            formattedMessage += '\n\nSTOP2END';
+            if(currentUserName !== 'admin'){
+              formattedMessage += '\n\nSTOP2END';
+            }
             writeUserData(data.phone, formattedMessage, 'sent', data.name);
             //regex for valid phone number
             if(!formattedPhone.match(/^\+1\d{10}$/)){
