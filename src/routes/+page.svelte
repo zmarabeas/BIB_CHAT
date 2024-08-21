@@ -196,11 +196,13 @@
         // currentMessages = data[user].messages;
     }
 
+/*
     let usersType = 'all';
     let engagedUsers = new Set();
     $: {
         engagedUsers = getEngagedUsers(usersData);
     }
+    */
 
     let inputMessage = '';
 
@@ -589,6 +591,7 @@
         });
     }
 
+/*
     $: {
       if(usersType === 'all'){
         users = sortUsersByTimestamp(usersData);
@@ -596,6 +599,7 @@
         users = engagedUsers;
       }
     }
+    */
 
 
 </script>
@@ -621,10 +625,12 @@
             <button class=edit id={messageState==='mass'?'selected':''} on:click={()=>handleMass()}>create mass text</button>
         </div>
         <input type="text" bind:value={searchValue} placeholder="search name, phone, or messages">
+        <!--
         <div class=usersType>
             <button class=edit id={usersType==='all'?'selected':''} on:click={()=>usersType = 'all'}>all</button>
             <button class=edit id={usersType==='engaged'?'selected':''} on:click={()=>usersType = 'engaged'}>engaged</button>
         </div>
+        -->
         {#if users.size === 0}
             <p>No users</p>
         {:else}
