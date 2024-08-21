@@ -263,6 +263,7 @@
             }else{
                 sendTwilioMessage({
                     to: formatPhone(data.phone),
+                    from: userInfo[currentUserName].phone || '+18254620440',
                     body: formattedMessage,
                 })
             }
