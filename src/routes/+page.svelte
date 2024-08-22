@@ -496,9 +496,13 @@
         }else{
           users = sortUsersByTimestamp(usersData);
           users = new Set(Array.from(users).filter(user => {
-            return usersData[user].info.name.toLowerCase().includes(search) 
-            || usersData[user].data.lastMessage.toLowerCase().includes(search)
-            || user.includes(search);
+            if(usersData[user].info){
+              return usersData[user].info.name.toLowerCase().includes(search) 
+              || usersData[user].data.lastMessage.toLowerCase().includes(search)
+              || user.includes(search);
+            }else{
+              return false;
+            }
           }));
         }
       }catch(e){
