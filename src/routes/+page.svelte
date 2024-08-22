@@ -545,7 +545,7 @@
       'admin': {
         'name': 'admin',
         'password': 'lolxd ;]',
-        'phone': '+16043054717'
+        'phone': '+15874059376'
       },
     }
 
