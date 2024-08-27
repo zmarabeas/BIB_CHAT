@@ -58,8 +58,8 @@
     }
 
     async function getUserData(phone) {
-        const userRef = ref(db, currentUserRef + 'messages/' + phone);
-        onValue(userRef, (snapshot) => {
+        const _userRef = ref(db, currentUserRef + 'messages/' + phone);
+        onValue(_userRef, (snapshot) => {
             data = snapshot.val();
             data = data;
 
@@ -73,14 +73,12 @@
     let messageState = null;
     let data = {};
     let usersData = {};
+    const userRef = ref(db, currentUserRef + 'users/');
     function getAllUserData() {
         // const userRef = ref(db, 'users/');
-        const userRef = ref(db, currentUserRef + 'users/');
-        console.log(userRef);
         onValue(userRef, (snapshot) => {
             usersData = snapshot.val();
             usersData = usersData;
-            console.log('usersData', usersData);
             //users = sortUsersByTimestamp(usersData);
         }, {
         });
@@ -246,11 +244,24 @@
         return formattedName;
     }
 
-    function sendMassText(){
+    const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
+    let currentMessageIndex = 0;
+    let totalMessages = 0;
+    let enableMass = true;
+
+    async function sendMassText(){
         if(massMessage.trim() === '') return;
         let formattedPhone;
         let formattedMessage;
-        massData.forEach(function(data){
+
+        totalMessages = massData.length;
+        currentMessageIndex = 0;
+        enableMass = false;
+
+        off(userRef);
+
+
+        massData.forEach(async function(data){
             formattedPhone = formatPhone(data.phone);
             formattedMessage = massMessage;
             if(currentUserName !== 'admin'){
@@ -269,6 +280,7 @@
                     body: formattedMessage,
                 })
             }
+            currentMessageIndex++;
         });
         clearMassData();
     }
@@ -480,8 +492,13 @@
         massData = massData;
         duplicatePhoneNumbers = [];
         massMessage = '';
+        enableMass = true;
+        currentMessageIndex = 0;
+        totalMessages = 0;
         files = null;
         fileElement.value = '';
+
+        getAllUserData();
     }
 
     let numUsers = 10;
@@ -704,7 +721,11 @@
                 {/each}
             </div>
             <textarea bind:value={massMessage} rows=5 placeholder="Enter your message" name="message" id="mass-text"></textarea>
-            <button on:click={()=>getMoney()} id=MONEY>Send Message</button>
+            {#if enableMass}
+                <button on:click={()=>getMoney()} id=MONEY>Send Message</button>
+            {:else}
+                <button id=MONEY disabled>Sending {currentMessageIndex} / {totalMessages}</button>
+            {/if}
         </div>
     {:else}
         <div class=container id=mass>
