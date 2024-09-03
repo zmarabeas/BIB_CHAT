@@ -59,10 +59,17 @@
 
     async function getUserData(phone) {
         const _userRef = ref(db, currentUserRef + 'messages/' + phone);
+        console.log('user ref: ', _userRef);
         onValue(_userRef, (snapshot) => {
             data = snapshot.val();
-            data = data;
-
+            console.log('data', data);
+            if(!data){
+                data = {
+                    messages: {},
+                }
+            }else{
+                data = data;
+            }
             currentMessages = data.messages;
             // console.log('data', data);
         });
@@ -73,9 +80,12 @@
     let messageState = null;
     let data = {};
     let usersData = {};
-    const userRef = ref(db, currentUserRef + 'users/');
+    let userRef = ref(db, currentUserRef + 'users/');
     function getAllUserData() {
         // const userRef = ref(db, 'users/');
+        userRef = ref(db, currentUserRef + 'users/');
+        console.log('Getting all user data');
+        console.log('user ref: ', userRef);
         onValue(userRef, (snapshot) => {
             usersData = snapshot.val();
             usersData = usersData;
@@ -157,11 +167,16 @@
 
     }
 
+    $: {
+            console.log('current user ref: ', currentUserRef);
+          }
 
     let selectedUserRef = null; 
     $: {
         if(selectedUser !== ''){
+            console.log('current user ref: ', currentUserRef);
             selectedUserRef = ref(db, currentUserRef + 'messages/' + selectedUser);
+
             onValue(selectedUserRef, (snapshot) => {
                 data = snapshot.val();
                 data = data;
@@ -506,7 +521,7 @@
 
     $: {
       try{
-        let search = searchValue.toLowerCase();
+        let search = searchValue.toLowerCase().trim();
         if(search === ''){
             {/* users = new Set(Object.keys(usersData)); */}
             users = sortUsersByTimestamp(usersData);
@@ -572,12 +587,16 @@
         if(loginCredentials[userNameInput] === passwordInput){
             loginSucess = true;
             loginStatus = 'success';
+            off(userRef);
+            usersData = {};
             currentUserName = userNameInput;
             if(currentUserName == 'admin'){
               currentUserRef = '';
             }else{
               currentUserRef = 'textblaster/' + userInfo[currentUserName].name + '/';
             }
+            console.log('logged in as: ', currentUserName);
+            console.log('getting their data');
             getAllUserData();
 
         }else{
