@@ -87,9 +87,12 @@
         console.log('Getting all user data');
         console.log('user ref: ', userRef);
         onValue(userRef, (snapshot) => {
-            usersData = snapshot.val();
-            usersData = usersData;
-            //users = sortUsersByTimestamp(usersData);
+            if(snapshot.val()){
+                usersData = snapshot.val();
+                usersData = usersData;
+            }else{
+                usersData = {};
+            }
         }, {
         });
     }
