@@ -549,10 +549,7 @@
     let userNameInput = '';
     let passwordInput = '';
 
-
-    let loginCredentials = {
-      'jeremy@squamishdodgejeepram.com': 'Vellichor',
-      'cruz@squamishdodgejeepram.com': 'Serendipity',
+    let unused = {
       'wjtibbo@gmail.com': 'Hologram',
       'ray@greatnorthfinance.com': 'Kaleidoscope',
       'tenneson@greatnorthfinance.com': 'Juxtapose',
@@ -560,6 +557,18 @@
       'brandon@greatnorthfinance.com': 'Quagmire',
       'garrett@squamishdodgejeepram.com': 'Labyrinth',
       'neima@squamishdodgejeepram.com': 'Nebula',
+    };
+
+
+    let loginCredentials = {
+      'jeremy@squamishdodgejeepram.com': 'Vellichor',
+      'cruz@squamishdodgejeepram.com': 'Serendipity',
+      'wjtibbo@gmail.com': 'Hologram',
+      'Arleneteves48@gmail.com': 'Serenity',
+      'wins.teves27@gmail.com': 'Polaris',
+      'mayann.teve91@gmail.com': 'Aurora',
+      'airynnavarro@gmail.com': 'Erudite',
+      'ramospatriciapaula@gmail.com': 'Ethereal',
       'admin': 'lolxd ;]',
     }
 
@@ -573,6 +582,36 @@
         'name': 'jeremy',
         'password': 'Vellichor',
         'phone': '+16043596071'
+      },
+      'ramospatriciapaula@gmail.com': {
+        'name': 'paula',
+        'password': 'Ethereal',
+        'phone': '+15877427096'
+      },
+      'airynnavarro@gmail.com': {
+        'name': 'airyn',
+        'password': 'Erudite',
+        'phone': '+15878175350'
+      },
+      'mayann.teve91@gmail.com': {
+        'name': 'mayann',
+        'password': 'Aurora',
+        'phone': '+15878166968'
+      },
+      'wins.teves27@gmail.com': {
+        'name': 'winston',
+        'password': 'Polaris',
+        'phone': '+15878047994'
+      },
+      'wjtibbo@gmail.com': {
+        'name': 'jeff',
+        'password': 'Hologram',
+        'phone': '+15877427678'
+      },
+      'Arleneteves48@gmail.com': {
+        'name': 'arlene',
+        'password': 'Serenity',
+        'phone': '+15878405695'
       },
       'admin': {
         'name': 'admin',
