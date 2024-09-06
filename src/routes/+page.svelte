@@ -282,9 +282,11 @@
         massData.forEach(async function(data){
             formattedPhone = formatPhone(data.phone);
             formattedMessage = massMessage;
+            /*
             if(currentUserName !== 'admin'){
               formattedMessage += '\n\nSTOP2END';
             }
+            */
             writeUserData(data.phone, formattedMessage, 'sent', data.name);
             //regex for valid phone number
             if(!formattedPhone.match(/^\+1\d{10}$/)){
@@ -548,8 +550,7 @@
     let loginStatus = null;
     let loginSucess = false;
     let currentUserName = '';
-
-    let userNameInput = '';
+let userNameInput = '';
     let passwordInput = '';
 
     let unused = {
@@ -572,6 +573,7 @@
       'mayann.teve91@gmail.com': 'Aurora',
       'airynnavarro@gmail.com': 'Erudite',
       'ramospatriciapaula@gmail.com': 'Ethereal',
+      'sabrina@greatnorthfinance.com': 'Austere',
       'admin': 'lolxd ;]',
     }
 
@@ -580,6 +582,11 @@
         'name': 'cruz',
         'password': 'Serendipity',
         'phone': '+16043054717'
+      },
+      'sabrina@greatnorthfinance.com': {
+        'name': 'gnf',
+        'password': 'Austere',
+        'phone': '+12362465467'
       },
       'jeremy@squamishdodgejeepram.com': {
         'name': 'jeremy',
