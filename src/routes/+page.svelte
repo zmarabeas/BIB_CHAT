@@ -90,7 +90,7 @@
             if(snapshot.val()){
                 usersData = snapshot.val();
                 usersData = usersData;
-                usersData = sortUsersByTimeStamp(usersData);
+                users = sortUsersByTimestamp(usersData);
             }else{
                 usersData = {};
             }
@@ -124,15 +124,17 @@
     }); 
 
 
-    function sortUsersByTimestamp(usersData){
+    function sortUsersByTimestamp(_usersData){
         let u = new Set();
-        Object.keys(usersData).forEach(phone => {
+        console.log('usersData: ', _usersData);
+        Object.keys(_usersData).forEach(phone => {
             u.add(phone);
         });
         u = u;
         //sort users by last message timestamp
+        console.log('users: ', u);
         let ret = new Set([...u].sort((a, b) => {
-            return (usersData[b].data.timestamp || Infinity) - (usersData[a].data.timestamp || Infinity);
+            return (_usersData[b].data.timestamp || Infinity) - (_usersData[a].data.timestamp || Infinity);
         }));
 
 
@@ -141,11 +143,11 @@
         return ret;
     }
 
-    function getEngagedUsers(usersData){
-        let u = sortUsersByTimestamp(usersData);
+    function getEngagedUsers(_usersData){
+        let u = sortUsersByTimestamp(_usersData);
         let ret = new Set();
         u.forEach(user => {
-            if(usersData[user].messagesReceived){
+            if(_usersData[user].messagesReceived){
                 ret.add(user);
             }
         });
