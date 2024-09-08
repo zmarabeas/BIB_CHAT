@@ -90,6 +90,7 @@
             if(snapshot.val()){
                 usersData = snapshot.val();
                 usersData = usersData;
+                usersData = sortUsersByTimeStamp(usersData);
             }else{
                 usersData = {};
             }
