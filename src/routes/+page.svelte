@@ -90,7 +90,8 @@
             if(snapshot.val()){
                 usersData = snapshot.val();
                 usersData = usersData;
-                users = sortUsersByTimestamp(usersData);
+                // users = sortUsersByTimestamp(usersData);
+                users = sortUsersByReceivedMessages(usersData);
             }else{
                 usersData = {};
             }
@@ -143,6 +144,22 @@
         return ret;
     }
 
+    function sortUsersByReceivedMessages(_usersData){
+        let u = sortUsersByTimestamp(_usersData);
+        let received = new Set();
+        let notReceived = new Set();
+        u.forEach(user => {
+            if(_usersData[user].messagesReceived){
+                received.add(user);
+            }else{
+                notReceived.add(user);
+            }
+        });
+        let ret = new Set([...received, ...notReceived]);
+        ret = ret;
+        return ret;
+    }
+
     function getEngagedUsers(_usersData){
         let u = sortUsersByTimestamp(_usersData);
         let ret = new Set();
@@ -158,11 +175,17 @@
 
 
     $: {
+        if(usersData){
+            users = sortUsersByReceivedMessages(usersData);
+        }
+    /*
         Object.keys(usersData).forEach(phone => {
             users.add(phone);
         });
         users = users;
+        */
         //sort users by last message timestamp
+        /*
         if(!users.length === 0 && !users.length === 1){
           users = new Set([...users].sort((a, b) => {
               return (usersData[b].data.timestamp || Infinity) - (usersData[a].data.timestamp || Infinity);
@@ -170,6 +193,7 @@
           users = users;
           console.log(users)
         }
+        */
 
     }
 
@@ -532,9 +556,11 @@
         let search = searchValue.toLowerCase().trim();
         if(search === ''){
             {/* users = new Set(Object.keys(usersData)); */}
-            users = sortUsersByTimestamp(usersData);
+            // users = sortUsersByTimestamp(usersData);
+            users = sortUsersByReceivedMessages(usersData);
         }else{
-          users = sortUsersByTimestamp(usersData);
+          // users = sortUsersByTimestamp(usersData);
+          users = sortUsersByReceivedMessages(usersData);
           users = new Set(Array.from(users).filter(user => {
             if(usersData[user].info){
               return usersData[user].info.name.toLowerCase().includes(search) 
