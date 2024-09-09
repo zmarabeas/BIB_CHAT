@@ -3,6 +3,7 @@
     import { getDatabase, orderByChild, off,  ref, set, update, child, onValue, onChildAdded } from "firebase/database";
     import { onMount, tick } from 'svelte';
     import papa from 'papaparse'; import { testData, dummyMessageData } from './testData.js';
+    import { user as currentLoggedInUser } from '$lib/stores/stores.js';
 
 
     let currentUserRef = '';
@@ -582,6 +583,7 @@
 let userNameInput = '';
     let passwordInput = '';
 
+
     let unused = {
       'wjtibbo@gmail.com': 'Hologram',
       'ray@greatnorthfinance.com': 'Kaleidoscope',
@@ -668,6 +670,8 @@ let userNameInput = '';
             off(userRef);
             usersData = {};
             currentUserName = userNameInput;
+            currentLoggedInUser.set(userInfo[currentUserName]);
+            
             if(currentUserName == 'admin'){
               currentUserRef = '';
             }else{
@@ -726,7 +730,7 @@ let userNameInput = '';
 <div class=content>
   {#if !loginSucess}
     <div class=container id=login>
-        <p>Enter your username and password</p>
+        <p class=login-title>Enter your username and password</p>
         <input type="text" bind:value={userNameInput} placeholder="username">
         <input type="password" on:keydown={handleLogin} bind:value={passwordInput} placeholder="password">
         <button class=login on:click={()=>handleLogin('click')}>Log In</button>
@@ -852,6 +856,10 @@ let userNameInput = '';
       gap: 1rem;
     }
 
+    .login-title {
+        text-align: center;
+    }
+
     h3.login {
         text-align: center;
     }
@@ -861,6 +869,20 @@ let userNameInput = '';
         max-width: 100%;
         min-width: 100%;
         text-align: center;
+        border: 1px solid #C3CEDA;
+    }
+
+    input:focus {
+        outline: none;
+    }
+
+    input {
+        padding: 10px;
+        border-radius: 5px;
+        border: 1px solid #C3CEDA;
+        width: 100%;
+        max-width: 100%;
+        min-width: 100%;
     }
 
 
@@ -1084,7 +1106,8 @@ let userNameInput = '';
         min-height: 80vh;
         height: 80vh;
         max-height: 80vh;
-        background-color: #0C4160;
+        /*background-color: #0C4160;*/
+        background-color: #3F3622;
         border-radius: 1rem;
         overflow: scroll;
         padding: 1rem;
