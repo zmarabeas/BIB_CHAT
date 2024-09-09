@@ -808,7 +808,9 @@ let userNameInput = '';
     {:else if messageState === 'mass'}
         <div class=container id=mass>
             <h3>mass text</h3>
-            <input type="file" id=file-input bind:files bind:this={fileElement} on:change={handleChange}>
+            <div class=file-input-wrapper>
+              <input type="file" id=file-input bind:files bind:this={fileElement} on:change={handleChange}>
+            </div>
             <div class=mass-info-wrapper>
               <button id=clear on:click={()=>clearMassData()}>clear</button>
               <h4>Number of contacts: {massData.length}</h4>
@@ -1006,12 +1008,23 @@ let userNameInput = '';
 
     #file-input {
         display: flex;
-        flex-direction: row;
-        justify-content: center;
+        justify-content: space-around;
         text-align: center;
         align-items: center;
-        min-height: 20px;
+        border: none;
+        padding: 0; 
     }
+
+    .file-input-wrapper {
+        display: flex;
+        flex-direction: row;
+        justify-content: space-between;
+        align-items: center;
+        height: 40px;
+        width: 95%;
+        gap: 1rem;
+    }
+
     .title-bar {
         display: flex;
         flex-direction: row;
@@ -1186,6 +1199,7 @@ let userNameInput = '';
         font-weight: bold;
         overflow-x: hidden;
         text-wrap: wrap;
+        min-width: 0;
     }
 
     .userInput:focus {
@@ -1200,6 +1214,7 @@ let userNameInput = '';
         align-items: center;
         border-radius: 1rem;
         border: 1px solid #C3CEDA;
+        width: 100%;
     }
 
     .edit {

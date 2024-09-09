@@ -45,7 +45,7 @@
 </script>
 
 <div class=header style='background-color: {headerColor}; color: {textBlastTextColor}'>
-    <img src="TEXT_BLAST.png" alt="BIB Chat" width="100" height="100">
+    <img src="TEXT_BLAST_CROPPED.png" alt="BIB Chat" width="130" height="130">
     {#if currentUser !== null && currentUser !== undefined}
         <h2>Welcome, {capitalizeFirstLetter(currentUser.name)}</h2>
     {:else}
@@ -67,7 +67,7 @@
 
     .header {
         color: var(--color-on-primary);
-        padding: .2rem;
+        padding: .5rem;
         display: flex;
         flex-direction: row;
         align-items: center;
@@ -81,8 +81,12 @@
         max-width: 100vw;
     }
 
+    h2 {
+        margin-left: 3rem;
+    }
+
     .footer {
-        padding: .2rem;
+        padding: .5rem;
     }
 
 </style>
