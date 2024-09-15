@@ -128,7 +128,6 @@
 
     function sortUsersByTimestamp(_usersData){
         let u = new Set();
-        console.log('usersData: ', _usersData);
         Object.keys(_usersData).forEach(phone => {
             u.add(phone);
         });
@@ -1119,7 +1118,6 @@ let userNameInput = '';
     .container {
         min-height: 80vh;
         height: 80vh;
-        max-height: 80vh;
         /*background-color: #0C4160;*/
         background-color: #3F3622;
         border-radius: 1rem;
@@ -1151,8 +1149,6 @@ let userNameInput = '';
         gap: 1rem;
         padding: 1rem;
         overflow: scroll;
-        min-height: 80%;
-        max-height: 80%;
         /* max-height: 60vh;
         min-height: 60vh; */
     }
@@ -1178,6 +1174,7 @@ let userNameInput = '';
     #chat.container {
         min-width: 70%;
         display: flex;
+        overflow: none;
         flex-direction: column;
         justify-content: space-between;
     }
@@ -1229,11 +1226,14 @@ let userNameInput = '';
         }
 
         #users.container {
-            min-width: 100%;
+            width: 100%;
         }
 
         #chat.container {
-            min-width: 100%;
+            width: 100%;
+            max-height: none;
+            min-height: none;
+            overflow: hidden;
         }
     }
 

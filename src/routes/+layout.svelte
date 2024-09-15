@@ -42,9 +42,14 @@
       return '';
     }
 
+    let head = null;
+    const scrollIntoView = (element) => {
+        element.scrollIntoView({ behavior: 'smooth' });
+    }
+
 </script>
 
-<div class=header style='background-color: {headerColor}; color: {textBlastTextColor}'>
+<div class=header bind:this={head} style='background-color: {headerColor}; color: {textBlastTextColor}'>
     <img src="TEXT_BLAST_CROPPED.png" alt="BIB Chat" width="130" height="130">
     {#if currentUser !== null && currentUser !== undefined}
         <h2>Welcome, {capitalizeFirstLetter(currentUser.name)}</h2>
@@ -60,10 +65,22 @@
 <div class=footer style='background-color: {footerColor}; color: {textColor}'>
     <img src="TEXT_BLAST.png" alt="BIB Chat" width="100" height="100">
     <!-- <h4>BIB Chat™️</h4> -->
+    <button class=top on:click={() =>  scrollIntoView(head)}>back to top</button>
 </div>
 
 <style>
     @import "$lib/css/global-dark.css";
+
+    .top {
+        background-color: #2A2B2A;
+        float: right;
+        color: #FBFDE9;
+        padding: .5rem;
+        border-radius: 5px;
+        border: none;
+        cursor: pointer;
+        max-width: 100px;
+    }
 
     .header {
         color: var(--color-on-primary);
@@ -87,6 +104,10 @@
 
     .footer {
         padding: .5rem;
+        display: flex;
+        flex-direction: row;
+        align-items: center;
+        justify-content: space-between;
     }
 
 </style>
