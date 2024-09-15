@@ -121,7 +121,7 @@
 
     let dat;
     onMount(() => {
-        getAllUserData();
+        // getAllUserData();
         // usersData = testData;
     }); 
 
@@ -252,7 +252,8 @@
 
     function sendTwilioMessage(message){
       //send message to twilio api https://gnschat-9300.twil.io/welcome
-      const response = fetch('https://gnschat-9300.twil.io/welcome', {
+      const sendURL = 'https://gnschat-9300.twil.io/welcome';
+      const response = fetch(sendURL, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -647,7 +648,7 @@ let userNameInput = '';
       'wjtibbo@gmail.com': {
         'name': 'jeff',
         'password': 'Hologram',
-        'phone': '+15877427678'
+        'phone': '+12494448225'
       },
       'Arleneteves48@gmail.com': {
         'name': 'arlene',
