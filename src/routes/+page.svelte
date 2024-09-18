@@ -133,14 +133,12 @@
         });
         u = u;
         //sort users by last message timestamp
-        console.log('users: ', u);
         let ret = new Set([...u].sort((a, b) => {
             return (_usersData[b].data.timestamp || Infinity) - (_usersData[a].data.timestamp || Infinity);
         }));
 
 
         ret = ret;
-        console.log(u, ret);
         return ret;
     }
 
@@ -169,7 +167,6 @@
             }
         });
         ret = ret;
-        console.log(u, ret);
         return ret;
     }
 
@@ -191,20 +188,17 @@
               return (usersData[b].data.timestamp || Infinity) - (usersData[a].data.timestamp || Infinity);
           }));
           users = users;
-          console.log(users)
         }
         */
 
     }
 
     $: {
-            console.log('current user ref: ', currentUserRef);
           }
 
     let selectedUserRef = null; 
     $: {
         if(selectedUser !== ''){
-            console.log('current user ref: ', currentUserRef);
             selectedUserRef = ref(db, currentUserRef + 'messages/' + selectedUser);
 
             onValue(selectedUserRef, (snapshot) => {
@@ -219,7 +213,22 @@
 
     let selectedUser = '';
     async function handleUser(user){
-        if(user === selectedUser) return;
+        if(user === selectedUser) {
+          if(usersData[user].messagesReceived){
+            if(usersData[user].messagesReceived === 1){
+              update(ref(db, currentUserRef + 'users/' + user), {
+                  messagesReceived: 2,
+              }).then(() => {
+                  // console.log('Data written successfully!');
+                  usersData[user].messagesReceived = 2;
+              }).catch((error) => {
+                  console.error('Error writing data: ', error);
+                  console.log('unable to update messages!', error);
+              });
+            }
+          }
+          return;
+        }
 
         
         //remove previous listener
@@ -230,6 +239,18 @@
 
         messageState = 'chat';
         selectedUser = user;
+
+        if(usersData[user].messagesReceived){
+            update(ref(db, currentUserRef + 'users/' + user), {
+                messagesReceived: 2,
+            }).then(() => {
+                // console.log('Data written successfully!');
+            }).catch((error) => {
+                console.error('Error writing data: ', error);
+                console.log('Data not written successfully!', error);
+            });
+        }
+
         getUserData(user);
         await tick();
         userName = usersData[user].info.name;
@@ -580,7 +601,7 @@
     let loginStatus = null;
     let loginSucess = false;
     let currentUserName = '';
-let userNameInput = '';
+    let userNameInput = '';
     let passwordInput = '';
 
 
@@ -657,7 +678,7 @@ let userNameInput = '';
       'admin': {
         'name': 'admin',
         'password': 'lolxd ;]',
-        'phone': '+15874059376'
+        'phone': '+15484883983'
       },
     }
 
@@ -757,7 +778,12 @@ let userNameInput = '';
             <p>No users</p>
         {:else}
             {#each Array.from(users).slice(0, numUsers) as user}
-                <button id={selectedUser===user?'selected':''} on:click={()=>handleUser(user)}>
+                <button class=userBtn id={selectedUser===user?'selected':''} on:click={()=>handleUser(user)}>
+                    {#if usersData[user].messagesReceived}
+                      {#if usersData[user].messagesReceived === 1}
+                        <div class=unread></div>
+                      {/if}
+                    {/if}
                     <span class=buttontext>
                       {#if usersData[user].info}
                         {(usersData[user].info.name==='Default'?user:usersData[user].info.name) + ' - ' + usersData[user].data.lastMessage}
@@ -856,6 +882,21 @@ let userNameInput = '';
       justify-content: space-between;
       align-items: center;
       gap: 1rem;
+    }
+
+    .userBtn {
+      display:flex;
+      flex-direction: row;
+      align-items: center;
+    }
+
+
+    .unread {
+        width: 10px;
+        height: 10px;
+        background-color: #04A3EE;
+        border-radius: 50%;
+        margin-right: 10px;
     }
 
     .login-title {
