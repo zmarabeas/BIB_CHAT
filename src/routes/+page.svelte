@@ -631,9 +631,15 @@
       'ramospatriciapaula@gmail.com': 'Ethereal',
       'sabrina@greatnorthfinance.com': 'Austere',
       'admin': 'lolxd ;]',
+      'guest': 'Dichotomy',
     }
 
     let userInfo = {
+      'guest' : {
+        'name': 'guest',
+        'password': 'Dichotomy',
+        'phone': '+12363019250'
+      },
       'cruz@squamishdodgejeepram.com': {
         'name': 'cruz',
         'password': 'Serendipity',
