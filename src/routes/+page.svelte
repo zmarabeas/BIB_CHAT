@@ -632,9 +632,21 @@
       'sabrina@greatnorthfinance.com': 'Austere',
       'admin': 'lolxd ;]',
       'guest': 'Dichotomy',
-    }
+      'nima@squamishdodgejeepram.com': 'Nebula',
+      'neima@squamishdodgejeepram.com': 'Quadradic',
+    };
 
     let userInfo = {
+      'nima@squamishdodgejeepram.com': {
+        'name': 'nima',
+        'password': 'Nebula',
+        'phone': '+17787432512'
+      },
+      'neima@squamishdodgejeepram.com': {
+        'name': 'neima',
+        'password': 'Quadradic',
+        'phone': '+17787196815'
+      },
       'guest' : {
         'name': 'guest',
         'password': 'Dichotomy',
