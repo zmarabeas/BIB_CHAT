@@ -634,9 +634,21 @@
       'guest': 'Dichotomy',
       'nima@squamishdodgejeepram.com': 'Nebula',
       'neima@squamishdodgejeepram.com': 'Quadradic',
+      'ocheregaming@gmail.com': 'Popcorn',
+      'matttownsend2013@gmail.com': 'Peanut',
     };
 
     let userInfo = {
+      'ocheragaming@gmail.com': {
+        'name': 'cherise',
+        'password': 'Popcorn',
+        'phone': '+17789496722'
+      },
+      'matttownsend2013@gmail.com': {
+       'name': 'matt',
+       'password': 'Peanut',
+       'phone': '+17789497373'
+       },
       'nima@squamishdodgejeepram.com': {
         'name': 'nima',
         'password': 'Nebula',
@@ -703,6 +715,22 @@
         'phone': '+15484883983'
       },
     }
+
+
+/*
+    let count = 1;
+    for(let user in userInfo){
+      console.log('user: ', count);
+      console.log('name: ', userInfo[user].name);
+      console.log('user: ', user);
+      console.log('password: ', userInfo[user].password);
+      console.log('phone: ', userInfo[user].phone);
+      count++;
+    }
+
+    console.log('login credentials: ', Object.keys(loginCredentials));
+  */
+
 
 
     function handleLogin(event){
