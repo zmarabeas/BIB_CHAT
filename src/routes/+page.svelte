@@ -1,6 +1,6 @@
 <script>
     import { FirebaseDB as db } from '$lib/firebase/firebase.js';
-    import { getDatabase, orderByChild, off,  ref, set, update, child, onValue, onChildAdded } from "firebase/database";
+    import { getDatabase, orderByChild, off,  ref, set, remove,  update, child, onValue, onChildAdded } from "firebase/database";
     import { onMount, tick } from 'svelte';
     import papa from 'papaparse'; import { testData, dummyMessageData } from './testData.js';
     import { user as currentLoggedInUser } from '$lib/stores/stores.js';
@@ -92,12 +92,56 @@
                 usersData = snapshot.val();
                 usersData = usersData;
                 // users = sortUsersByTimestamp(usersData);
-                users = sortUsersByReceivedMessages(usersData);
+                handleUserType(currentUserType);
+                // users = sortUsersByReceivedMessages(usersData);
             }else{
                 usersData = {};
             }
         }, {
         });
+    }
+
+    function blockUser(){
+      //add user to blocked list on database
+      const _ref = ref(db, currentUserRef + 'blocked/' + selectedUser);
+      //time in milliseconds
+      const timestamp = Date.now();
+
+      set(_ref, {
+          timestamp: timestamp,
+      }).then(() => {
+          // console.log('Data written successfully!');
+          handleUserType(currentUserType);
+      }).catch((error) => {
+          console.error('Error blocking user: ', error);
+          console.log('User not blocked successfully!', error);
+      });
+    }
+
+    function unblockUser(){
+      //remove user from blocked list on database
+      const _ref = ref(db, currentUserRef + 'blocked/' + selectedUser);
+      remove(_ref).then(() => {
+          // console.log('Data written successfully!');
+          //blockedUsers.delete(selectedUser);
+          //blockedUsers = blockedUsers;
+          handleUserType(currentUserType);
+      }).catch((error) => {
+          console.error('Error unblocking user: ', error);
+          console.log('user not unblocked successfully!', error);
+      });
+    }
+
+
+    let blockedUsers = new Set();
+    function getBlockedUsers(){
+      const _ref = ref(db, currentUserRef + 'blocked/');
+      onValue(_ref, (snapshot) => {
+          console.log('blocked users: ', snapshot.val());
+          if(snapshot.val()){
+              blockedUsers = new Set(Object.keys(snapshot.val()));
+          }
+      });
     }
 
     function writeDummyData() {
@@ -127,11 +171,7 @@
 
 
     function sortUsersByTimestamp(_usersData){
-        let u = new Set();
-        Object.keys(_usersData).forEach(phone => {
-            u.add(phone);
-        });
-        u = u;
+        let u = new Set(Object.keys(_usersData));
         //sort users by last message timestamp
         let ret = new Set([...u].sort((a, b) => {
             return (_usersData[b].data.timestamp || Infinity) - (_usersData[a].data.timestamp || Infinity);
@@ -171,30 +211,13 @@
     }
 
 
+/*
     $: {
         if(usersData){
             users = sortUsersByReceivedMessages(usersData);
         }
-    /*
-        Object.keys(usersData).forEach(phone => {
-            users.add(phone);
-        });
-        users = users;
-        */
-        //sort users by last message timestamp
-        /*
-        if(!users.length === 0 && !users.length === 1){
-          users = new Set([...users].sort((a, b) => {
-              return (usersData[b].data.timestamp || Infinity) - (usersData[a].data.timestamp || Infinity);
-          }));
-          users = users;
-        }
-        */
-
     }
-
-    $: {
-          }
+    */
 
     let selectedUserRef = null; 
     $: {
@@ -583,10 +606,12 @@
         if(search === ''){
             {/* users = new Set(Object.keys(usersData)); */}
             // users = sortUsersByTimestamp(usersData);
-            users = sortUsersByReceivedMessages(usersData);
+            // users = sortUsersByReceivedMessages(usersData);
+            handleUserType(currentUserType);
         }else{
           // users = sortUsersByTimestamp(usersData);
-          users = sortUsersByReceivedMessages(usersData);
+          // users = sortUsersByReceivedMessages(usersData);
+          handleUserType(currentUserType);
           users = new Set(Array.from(users).filter(user => {
             if(usersData[user].info){
               return usersData[user].info.name.toLowerCase().includes(search) 
@@ -603,7 +628,7 @@
     }
 
     let loginStatus = null;
-    let loginSucess = false;
+    let loginSuccess = false;
     let currentUserName = '';
     let userNameInput = '';
     let passwordInput = '';
@@ -736,7 +761,7 @@
     function handleLogin(event){
       if(event === 'click' || event.key === 'Enter'){
         if(loginCredentials[userNameInput] === passwordInput){
-            loginSucess = true;
+            loginSuccess = true;
             loginStatus = 'success';
             off(userRef);
             usersData = {};
@@ -751,9 +776,10 @@
             console.log('logged in as: ', currentUserName);
             console.log('getting their data');
             getAllUserData();
+            getBlockedUsers();
 
         }else{
-            loginSucess = false;
+            loginSuccess = false;
             loginStatus = 'invalid login';
         }
       }
@@ -777,7 +803,7 @@
         .then(response => response.json())
         .then(data => {
             console.log('Success:', data);
-            loginSucess = true;
+            loginSuccess = true;
         })
         .catch((error) => {
             console.error('Error:', error);
@@ -794,12 +820,23 @@
     }
     */
 
+    let currentUserType = 'all';
+    function handleUserType(type){
+      currentUserType = type;
+      if(type === 'all'){
+        users = sortUsersByReceivedMessages(usersData);
+      }else if(type === 'blocked'){
+        users = blockedUsers;
+      }
+      users = users;
+    }
+
 
 </script>
 
 
 <div class=content>
-  {#if !loginSucess}
+  {#if !loginSuccess}
     <div class=container id=login>
         <p class=login-title>Enter your username and password</p>
         <input type="text" bind:value={userNameInput} placeholder="username">
@@ -828,6 +865,7 @@
             <p>No users</p>
         {:else}
             {#each Array.from(users).slice(0, numUsers) as user}
+              {#if !blockedUsers.has(user) || (currentUserType === 'blocked' && blockedUsers.has(user))}
                 <button class=userBtn id={selectedUser===user?'selected':''} on:click={()=>handleUser(user)}>
                 <!--
                     {#if usersData[user].messagesReceived}
@@ -842,6 +880,7 @@
                       {/if}
                     </span>
                 </button>
+              {/if}
             {/each}
             <button on:click={()=>numUsers = numUsers + 10}>show more</button>
         {/if}
@@ -860,10 +899,17 @@
                         <button class=edit on:click={()=>editUserName = true}>edit</button>
                     {/if}
                 {/if}
+                {#if blockedUsers.has(selectedUser)}
+                    <button class=edit on:click={()=>unblockUser()}>unblock</button>
+                {:else}
+                    <button class=edit on:click={()=>blockUser()}>block</button>
+                {/if}
             </h3>
 
             <div class=message-content>
-                {#if currentMessages}
+                {#if blockedUsers.has(selectedUser)}
+                    <h3 class=warning>Unblock to view messages</h3>
+                {:else if currentMessages}
                     {#each Object.keys(currentMessages).reverse() as message}
                         <div class=message-wrapper>
                             <p class=message id={currentMessages[message].type}>{currentMessages[message].message}</p>
@@ -918,7 +964,15 @@
     <p>Loading...</p>
   {/if}
 
+  <br>
+
 </div>
+{#if loginSuccess}
+  <div class=container id=userType>
+    <button class=user-btn id={currentUserType==='all'?'selected':''}  on:click={()=>handleUserType('all')}>all</button>
+    <button class=user-btn id={currentUserType==='blocked'?'selected':''} on:click={()=>handleUserType('blocked')}>blocked</button>
+  </div>
+{/if}
 
 <!-- create confirmation overlay for mass text -->
 
@@ -928,6 +982,19 @@
 
 
 <style>
+
+    .user-btn {
+        text-align: center;
+        padding: 5px;
+        min-width: 50px;
+        line-height: 0px;
+    }
+
+    #selected.user-btn {
+        background-color: rgba(0, 0, 0, 0.5);
+        color: azure;
+    }
+
     .usersType {
       display:flex;
       flex-direction: row;
@@ -1199,13 +1266,13 @@
     
     button:hover {
         /* box-shadow: 0px 5px 5px rgba(0, 0, 0, 0.3); */
-        background-color: rgba(0, 0, 0, 0.2);
+        background-color: rgba(0, 0, 0, 0.5);
     }
 
 
     #selected {
         background-color: #071330;
-        background-color: rgba(0, 0, 0, 0.3);
+        background-color: rgba(0, 0, 0, 0.5);
     }
 
     .container {
@@ -1216,6 +1283,17 @@
         border-radius: 1rem;
         overflow: scroll;
         padding: 1rem;
+    }
+
+    #userType.container {
+        display: flex;
+        flex-direction: row;
+        justify-content: center;
+        align-items: center;
+        min-height: 10vh;
+        max-height: 50px;
+        gap: 1rem;
+        width: 100%;
     }
 
     .timestamp {
@@ -1330,5 +1408,8 @@
         }
     }
 
+    .warning {
+      margin: auto;
+    }
 
 </style>
