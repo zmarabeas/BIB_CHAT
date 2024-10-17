@@ -639,7 +639,7 @@
     };
 
     let userInfo = {
-      'ocheragaming@gmail.com': {
+      'ocheregaming@gmail.com': {
         'name': 'cherise',
         'password': 'Popcorn',
         'phone': '+17789496722'
