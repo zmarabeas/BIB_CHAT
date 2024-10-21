@@ -220,6 +220,7 @@
     */
 
     let selectedUserRef = null; 
+    /*
     $: {
         if(selectedUser !== ''){
             if(selectedUserRef){
@@ -240,6 +241,7 @@
 
         }
     }
+    */
 
     let currentMessages = [];
 
@@ -273,6 +275,21 @@
 
         messageState = 'chat';
         selectedUser = user;
+
+        selectedUserRef = ref(db, currentUserRef + 'messages/' + user);
+
+        onValue(selectedUserRef, (snapshot) => {
+            data = snapshot.val();
+            if(!data){
+                data = {
+                    messages: {},
+                }
+            }else{
+                data = data;
+            }
+            currentMessages = data.messages;
+            // console.log('data', data);
+        });
 
         if(usersData[user].messagesReceived){
             update(ref(db, currentUserRef + 'users/' + user), {
