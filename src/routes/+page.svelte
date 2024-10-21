@@ -222,6 +222,15 @@
     let selectedUserRef = null; 
     $: {
         if(selectedUser !== ''){
+            if(selectedUserRef){
+                try{
+                  off(selectedUserRef);
+                }catch(e){
+                  console.error(e);
+                  console.log('unable to remove listener', e);
+                }
+                selectedUserRef = null;
+            }
             selectedUserRef = ref(db, currentUserRef + 'messages/' + selectedUser);
 
             onValue(selectedUserRef, (snapshot) => {
@@ -237,7 +246,7 @@
     let selectedUser = '';
     async function handleUser(user){
         if(user === selectedUser) {
-        /*
+
           if(usersData[user].messagesReceived){
             if(usersData[user].messagesReceived === 1){
               update(ref(db, currentUserRef + 'users/' + user), {
@@ -251,7 +260,7 @@
               });
             }
           }
-          */
+
           return;
         }
 
@@ -265,7 +274,6 @@
         messageState = 'chat';
         selectedUser = user;
 
-/*
         if(usersData[user].messagesReceived){
             update(ref(db, currentUserRef + 'users/' + user), {
                 messagesReceived: 2,
@@ -276,7 +284,6 @@
                 console.log('Data not written successfully!', error);
             });
         }
-        */
 
         getUserData(user);
         await tick();
@@ -867,13 +874,11 @@
             {#each Array.from(users).slice(0, numUsers) as user}
               {#if !blockedUsers.has(user) || (currentUserType === 'blocked' && blockedUsers.has(user))}
                 <button class=userBtn id={selectedUser===user?'selected':''} on:click={()=>handleUser(user)}>
-                <!--
                     {#if usersData[user].messagesReceived}
                       {#if usersData[user].messagesReceived === 1}
                         <div class=unread></div>
                       {/if}
                     {/if}
-                    -->
                     <span class=buttontext>
                       {#if usersData[user].info}
                         {(usersData[user].info.name==='Default'?user:usersData[user].info.name) + ' - ' + usersData[user].data.lastMessage}
