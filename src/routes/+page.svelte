@@ -813,7 +813,7 @@
     }
 
     let labeledUsers = {
-      'red': new Set(),
+      'red': new Set('test'),
       'yellow': new Set(),
       'green': new Set(),
     };
@@ -866,6 +866,8 @@
                 'yellow': new Set(data.yellow),
                 'green': new Set(data.green),
               };
+          }else{
+            updateLabel(labeledUsers);
           }
       });
     }
