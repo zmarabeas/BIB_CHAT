@@ -60,10 +60,10 @@
 
     async function getUserData(phone) {
         const _userRef = ref(db, currentUserRef + 'messages/' + phone);
-        console.log('user ref: ', _userRef);
+        //console.log('user ref: ', _userRef);
         onValue(_userRef, (snapshot) => {
             data = snapshot.val();
-            console.log('data', data);
+         //   console.log('data', data);
             if(!data){
                 data = {
                     messages: {},
@@ -85,8 +85,8 @@
     function getAllUserData() {
         // const userRef = ref(db, 'users/');
         userRef = ref(db, currentUserRef + 'users/');
-        console.log('Getting all user data');
-        console.log('user ref: ', userRef);
+        //console.log('Getting all user data');
+        //console.log('user ref: ', userRef);
         onValue(userRef, (snapshot) => {
             if(snapshot.val()){
                 usersData = snapshot.val();
@@ -100,6 +100,8 @@
         }, {
         });
     }
+
+
 
     function blockUser(){
       //add user to blocked list on database
@@ -137,7 +139,7 @@
     function getBlockedUsers(){
       const _ref = ref(db, currentUserRef + 'blocked/');
       onValue(_ref, (snapshot) => {
-          console.log('blocked users: ', snapshot.val());
+          //console.log('blocked users: ', snapshot.val());
           if(snapshot.val()){
               blockedUsers = new Set(Object.keys(snapshot.val()));
           }
@@ -801,6 +803,7 @@
             console.log('getting their data');
             getAllUserData();
             getBlockedUsers();
+            getLabels();
 
         }else{
             loginSuccess = false;
@@ -808,6 +811,65 @@
         }
       }
     }
+
+    let labeledUsers = {
+      'red': new Set(),
+      'yellow': new Set(),
+      'green': new Set(),
+    };
+
+    function labelUser(user, label){
+      let currentLabel = '';
+
+      Object.keys(labeledUsers).forEach((key) => {
+        if(labeledUsers[key].has(user)){
+          labeledUsers[key].delete(user);
+          currentLabel = key;
+        }
+      });
+
+      if(currentLabel !== label){
+        labeledUsers[label].add(user);
+        labeledUsers = labeledUsers;
+        //console.log('labeled users: ', labeledUsers);
+      }
+
+      updateLabel(labeledUsers);
+    }
+
+    function updateLabel(labels){
+      const labelRef = ref(db, currentUserRef + 'labels/');
+      //console.log('labels: ', labels);
+      set(labelRef, 
+        {
+          red: Array.from(labels.red),
+          yellow: Array.from(labels.yellow),
+          green: Array.from(labels.green),
+        }
+      ).then(() => {
+          //console.log('Data written successfully!');
+      }).catch((error) => {
+          console.error('Error writing data: ', error);
+          console.log('Data not written successfully!', error);
+      });
+    }
+
+    function getLabels(){
+      const labelRef = ref(db, currentUserRef + 'labels/');
+      onValue(labelRef, (snapshot) => {
+          //console.log('labels: ', snapshot.val());
+          if(snapshot.val()){
+              let data = snapshot.val();
+              //console.log('labels from db: ', data);
+              labeledUsers = {
+                'red': new Set(data.red),
+                'yellow': new Set(data.yellow),
+                'green': new Set(data.green),
+              };
+          }
+      });
+    }
+
 
 
 
@@ -901,6 +963,15 @@
                         {(usersData[user].info.name==='Default'?user:usersData[user].info.name) + ' - ' + usersData[user].data.lastMessage}
                       {/if}
                     </span>
+                    {#if labeledUsers.red.has(user)}
+                      <div class=red></div>
+                    {/if}
+                    {#if labeledUsers.yellow.has(user)}
+                      <div class=yellow></div>
+                    {/if}
+                    {#if labeledUsers.green.has(user)}
+                      <div class=green></div>
+                    {/if}
                 </button>
               {/if}
             {/each}
@@ -926,7 +997,15 @@
                 {:else}
                     <button class=edit on:click={()=>blockUser()}>block</button>
                 {/if}
+
             </h3>
+            <h3>Labels: 
+                {#each Object.keys(labeledUsers) as label}
+                  <button class=edit id={labeledUsers[label].has(selectedUser)?'selected':''} on:click={()=>labelUser(selectedUser, label)}>{label}</button>
+                {/each}
+            </h3>
+            <!-- add a line below here -->
+            <div class=horizontal-line></div>
 
             <div class=message-content>
                 {#if blockedUsers.has(selectedUser)}
@@ -1004,6 +1083,36 @@
 
 
 <style>
+    .horizontal-line {
+        width: 100%;
+        height: 1px;
+        background-color: #C3CEDA;
+        margin: 10px 0px;
+    }
+
+    .red {
+        width: 10px;
+        height: 10px;
+        background-color: red;
+        border-radius: 50%;
+        margin-right: 10px;
+    }
+
+    .yellow {
+        width: 10px;
+        height: 10px;
+        background-color: yellow;
+        border-radius: 50%;
+        margin-right: 10px;
+    }
+
+    .green {
+        width: 10px;
+        height: 10px;
+        background-color: green;
+        border-radius: 50%;
+        margin-right: 10px;
+    }
 
     .user-btn {
         text-align: center;
