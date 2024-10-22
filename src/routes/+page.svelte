@@ -920,6 +920,13 @@
     }
 
 
+    function displayPhone(phone){
+      let formattedPhone = phone.toString();
+      formattedPhone = formattedPhone.slice(2);
+      formattedPhone = formattedPhone.replace(/(\d{3})(\d{3})(\d{4})/, '$1-$2-$3');
+      return formattedPhone;
+    }
+
 </script>
 
 
@@ -983,7 +990,7 @@
 
     {#if messageState === 'chat'}
         <div class=container id=chat>
-            <h3>messages{selectedUser !==  '' ? ' - ' + selectedUser: ''}
+            <h3>messages{selectedUser !==  '' ? ' - ' + displayPhone(selectedUser): ''}
                 {#if editUserName === true}
                     <input type="text" id=username bind:value={userName}>
                     <button class=edit on:click={()=>changeUserName()}>submit</button>
